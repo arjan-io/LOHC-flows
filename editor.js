@@ -156,6 +156,11 @@ function bindEvents() {
     if (element.dataset.contact) flow.contacts[Number(element.dataset.contactIndex)][element.dataset.contact] = element.value;
     setDirty(); updatePreviewAndValidation();
   }));
+  document.querySelectorAll("[data-meta], [data-owner], [data-node-text], [data-contact]").forEach(input => input.addEventListener("change", () => {
+    const scrollPosition = window.scrollY;
+    render();
+    window.scrollTo({ top: scrollPosition });
+  }));
   document.querySelectorAll("[data-node-field='type']").forEach(select => select.addEventListener("change", event => {
     const node = nodeById(event.currentTarget.dataset.node); node.type = event.currentTarget.value;
     if (node.type === "decision") { delete node.next; node.routes ||= [{ id: "yes", nl: "Ja", en: "Yes", target: "" }, { id: "no", nl: "Nee", en: "No", target: "" }]; }
