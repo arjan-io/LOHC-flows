@@ -133,7 +133,7 @@ a { color: inherit; }
 .guided-answers { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem; }
 .guided-answer { min-width: 92px; padding: .65rem 1rem; border: 2px solid var(--club-red); border-radius: 999px; color: var(--club-red); background: white; font-weight: 850; cursor: pointer; }
 .guided-answer:hover, .guided-answer:focus-visible, .guided-answer.is-selected { color: white; background: var(--club-red); outline: none; }
-.flow-view-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-bottom: 1rem; padding: .75rem; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.flow-view-controls { position: sticky; top: 82px; z-index: 14; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-bottom: 1rem; padding: .75rem; border: 1px solid var(--line); border-radius: 12px; background: rgb(255 255 255 / 96%); box-shadow: 0 8px 22px rgb(40 40 40 / 10%); backdrop-filter: blur(10px); }
 .view-toggle { display: inline-flex; overflow: hidden; border: 1px solid #c9d2d6; border-radius: 9px; }
 .view-toggle button { padding: .5rem .75rem; border: 0; color: var(--charcoal); background: #f2f5f6; cursor: pointer; font-weight: 750; }
 .view-toggle button.is-active { color: white; background: var(--charcoal); }
@@ -219,6 +219,7 @@ footer { padding: 1.5rem; background: var(--navy); color: #b9cad5; text-align: c
 }
 @media (max-width: 560px) {
   .site-header { height: 66px; }
+  .flow-view-controls { top: 72px; }
   .help-link span:last-child { display: none; }
   .hero { padding-top: 3rem; }
   .category-grid { grid-template-columns: 1fr; }
