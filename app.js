@@ -10,7 +10,7 @@ const translations = {
     noProcesses: "Nog geen processen", results: n => `${n} ${n === 1 ? "resultaat" : "resultaten"}`,
     noResults: "Geen processen gevonden. Probeer een andere zoekterm.", home: "Home", draft: "Conceptproces",
     owner: "Proceseigenaar", reviewed: "Laatst gecontroleerd", category: "Categorie", contacts: "Contactpersonen",
-    legend: "Legenda", startEnd: "Begin / uitkomst", action: "Actie", decision: "Beslissing", note: "Opmerking",
+    legend: "Legenda", start: "Begin", outcome: "Uitkomst", startEnd: "Begin / uitkomst", action: "Actie", decision: "Beslissing", note: "Opmerking",
     share: "Deel", print: "Print", edit: "Bewerk flow", copied: "Link gekopieerd", copyEmail: "Kopieer e-mailadres",
     emailCopied: "E-mailadres gekopieerd", loading: "Proces laden…", invalidFlow: "Deze flow kon niet worden geladen.",
     continuesAt: "Vervolg bij", guided: "Begeleid", overview: "Overzicht", chooseAnswer: "Kies een antwoord om verder te gaan",
@@ -25,7 +25,7 @@ const translations = {
     noProcesses: "No processes yet", results: n => `${n} ${n === 1 ? "result" : "results"}`,
     noResults: "No processes found. Try a different search term.", home: "Home", draft: "Draft process",
     owner: "Process owner", reviewed: "Last reviewed", category: "Category", contacts: "Contacts",
-    legend: "Legend", startEnd: "Start / outcome", action: "Action", decision: "Decision", note: "Note",
+    legend: "Legend", start: "Start", outcome: "Outcome", startEnd: "Start / outcome", action: "Action", decision: "Decision", note: "Note",
     share: "Share", print: "Print", edit: "Edit flow", copied: "Link copied", copyEmail: "Copy email address",
     emailCopied: "Email address copied", loading: "Loading process…", invalidFlow: "This flow could not be loaded.",
     continuesAt: "Continues at", guided: "Guided", overview: "Overview", chooseAnswer: "Choose an answer to continue",
@@ -240,7 +240,7 @@ async function renderFlow(flowId) {
       ${guidedToolbar(flow, nodes, answers, mode)}
       <div class="flow-layout"><section class="flow-panel${mode === "guided" ? " flow-panel--guided" : ""}" aria-label="${escapeHtml(content.title)}"><div class="graph-canvas${mode === "guided" ? " graph-canvas--guided" : ""}">${mode === "guided" ? guidedPath(flow.entry, nodes, answers) : renderPath(flow.entry, nodes)}</div></section>
       <aside class="flow-sidebar"><section class="sidebar-card"><h2>${t("contacts")}</h2>${flow.contacts.map(contact => `<div class="contact"><div class="contact-details"><strong>${escapeHtml(contact[language])}</strong><a href="mailto:${contact.email}">${escapeHtml(contact.email)}</a></div><button class="copy-email" type="button" data-email="${escapeHtml(contact.email)}" aria-label="${t("copyEmail")}: ${escapeHtml(contact.email)}" title="${t("copyEmail")}">▣</button></div>`).join("")}</section>
-      <section class="sidebar-card"><h2>${t("legend")}</h2><div class="legend-row"><span class="legend-shape legend-start-end"></span>${t("startEnd")}</div><div class="legend-row"><span class="legend-shape legend-action"></span>${t("action")}</div><div class="legend-row"><span class="legend-shape diamond"></span>${t("decision")}</div></section></aside></div></section>`;
+      <section class="sidebar-card"><h2>${t("legend")}</h2><div class="legend-row"><span class="legend-shape legend-start"></span>${t("start")}</div><div class="legend-row"><span class="legend-shape legend-action"></span>${t("action")}</div><div class="legend-row"><span class="legend-shape diamond"></span>${t("decision")}</div><div class="legend-row"><span class="legend-shape legend-end"></span>${t("outcome")}</div></section></aside></div></section>`;
     document.querySelector("[data-category-link]").addEventListener("click", event => { event.preventDefault(); renderCategory(category.id); });
     document.querySelector("#print-button").addEventListener("click", () => window.print());
     document.querySelector("#share-button").addEventListener("click", shareCurrentPage);
