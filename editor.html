@@ -6,9 +6,9 @@
     <meta name="description" content="Visuele editor voor LOHC-processen.">
     <title>Flow-editor · LOHC Proceswijzer</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css?v=20260702-10">
-    <link rel="stylesheet" href="editor.css?v=20260702-3">
-    <script type="module" src="editor.js?v=20260702-10"></script>
+    <link rel="stylesheet" href="styles.css?v=20260702-11">
+    <link rel="stylesheet" href="editor.css?v=20260702-4">
+    <script type="module" src="editor.js?v=20260702-11"></script>
   </head>
   <body class="editor-body">
     <header class="editor-header">
@@ -17,6 +17,7 @@
         <span><strong>LOHC</strong><small>Flow-editor</small></span>
       </a>
       <div class="editor-header-actions">
+        <label class="flow-switcher"><span>Flow</span><select id="flow-selector" aria-label="Kies flow om te bewerken"></select></label>
         <span class="save-state" id="save-state">Niet opgeslagen</span>
         <button class="button button--quiet" id="new-flow" type="button">Nieuwe flow</button>
         <label class="button button--quiet" for="import-flow">Importeer JSON</label>
