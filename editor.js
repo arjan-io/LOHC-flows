@@ -145,7 +145,7 @@ function nestedSet(target, path, value) { const [locale, field] = path.split("."
 function nodeById(id) { return flow.nodes.find(node => node.id === id); }
 
 function bindEvents() {
-  document.querySelectorAll("input, select, textarea").forEach(input => input.addEventListener("input", event => {
+  document.querySelectorAll(".editor-shell input, .editor-shell select, .editor-shell textarea").forEach(input => input.addEventListener("input", event => {
     const element = event.currentTarget;
     if (element.dataset.root) flow[element.dataset.root] = element.value;
     if (element.dataset.meta) nestedSet(flow, element.dataset.meta, element.value);
@@ -162,7 +162,7 @@ function bindEvents() {
     else { delete node.routes; if (node.type === "end") delete node.next; }
     setDirty(); render();
   }));
-  document.querySelectorAll("[data-add-node]").forEach(button => button.addEventListener("click", () => addNode(button.dataset.addNode)));
+  document.querySelectorAll("[data-add-node]").forEach(button => { button.onclick = () => addNode(button.dataset.addNode); });
   document.querySelectorAll("[data-delete-node]").forEach(button => button.addEventListener("click", () => deleteNode(button.dataset.deleteNode)));
   document.querySelectorAll("[data-add-route]").forEach(button => button.addEventListener("click", () => { nodeById(button.dataset.addRoute).routes.push({ id: generateInternalId("route"), nl: "Route", en: "Route", target: "" }); setDirty(); render(); }));
   document.querySelectorAll("[data-delete-route]").forEach(button => button.addEventListener("click", () => { nodeById(button.dataset.node).routes.splice(Number(button.dataset.deleteRoute), 1); setDirty(); render(); }));
