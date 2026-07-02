@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arjan-io.github.io/LOHC-flows/flows/flow.schema.json",
+  "title": "LOHC flow",
+  "type": "object",
+  "required": ["schemaVersion", "id", "category", "entry", "nl", "en", "nodes"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "category": { "type": "string" },
+    "entry": { "type": "string" },
+    "nl": { "$ref": "#/$defs/translatedContent" },
+    "en": { "$ref": "#/$defs/translatedContent" },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "translatedContent": {
+      "type": "object",
+      "required": ["title"],
+      "properties": { "title": { "type": "string" }, "detail": { "type": "string" }, "description": { "type": "string" } }
+    },
+    "node": {
+      "type": "object",
+      "required": ["id", "type", "nl", "en"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "type": { "enum": ["start", "action", "decision", "note", "end"] },
+        "nl": { "$ref": "#/$defs/translatedContent" },
+        "en": { "$ref": "#/$defs/translatedContent" },
+        "next": { "type": "string" },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "nl", "en", "target"],
+            "properties": {
+              "id": { "type": "string" }, "nl": { "type": "string" }, "en": { "type": "string" }, "target": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
