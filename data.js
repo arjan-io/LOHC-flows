@@ -52,7 +52,20 @@ export const flows = [
         { type: "start", title: "Nieuwe inschrijving ontvangen" },
         { type: "decision", title: "Bestaat deze persoon al?", branches: ["Ja — voeg de personen samen", "Nee — ga verder"] },
         { type: "action", title: "Persoonsgegevens controleren", detail: "Vink bij Persoon bewerken het factuuradres aan." },
-        { type: "decision", title: "Is dit een vrijwilliger?", branches: ["Ja — bevestig en start VOG-proces", "Nee — bepaal de spelvorm"] },
+        {
+          type: "decision",
+          title: "Is dit een vrijwilliger?",
+          branches: [
+            {
+              label: "Ja",
+              title: "Bevestigen",
+              detail: "Klik op ‘Bevestigen’ in de ledenadministratie en informeer de VOG-functionaris.",
+              outcome: "Proces afgerond",
+              terminal: true
+            },
+            { label: "Nee", title: "Bepaal de spelvorm", continues: true }
+          ]
+        },
         { type: "decision", title: "Trimmer of G-hockey?", branches: ["Ja — wijs direct lidmaatschap toe", "Nee — plaats op de wachtlijst"] },
         { type: "action", title: "Lidmaatschap toewijzen", detail: "Plaats het lid in het juiste team." },
         { type: "action", title: "Welkomstmail en wachtwoordmail versturen" },
@@ -69,7 +82,20 @@ export const flows = [
         { type: "start", title: "New registration received" },
         { type: "decision", title: "Does this person already exist?", branches: ["Yes — merge the records", "No — continue"] },
         { type: "action", title: "Check personal details", detail: "Select the billing-address option when editing the person." },
-        { type: "decision", title: "Is this a volunteer?", branches: ["Yes — confirm and start the screening process", "No — determine the playing format"] },
+        {
+          type: "decision",
+          title: "Is this a volunteer?",
+          branches: [
+            {
+              label: "Yes",
+              title: "Confirm",
+              detail: "Click ‘Confirm’ in membership administration and inform the screening officer.",
+              outcome: "Process complete",
+              terminal: true
+            },
+            { label: "No", title: "Determine the playing format", continues: true }
+          ]
+        },
         { type: "decision", title: "Trim hockey or G-hockey?", branches: ["Yes — assign membership directly", "No — add to the waiting list"] },
         { type: "action", title: "Assign membership", detail: "Place the member in the appropriate team." },
         { type: "action", title: "Send welcome and password emails" },
