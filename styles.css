@@ -203,7 +203,8 @@ a { color: inherit; }
 .copy-email:hover, .copy-email:focus-visible { border-color: var(--blue); background: var(--blue-soft); outline: none; }
 .legend-row { display: flex; align-items: center; gap: .6rem; margin-top: .65rem; color: var(--muted); font-size: .8rem; }
 .legend-shape { width: 24px; height: 16px; border-radius: 5px; }
-.legend-start-end { border: 2px solid var(--club-red); border-radius: 999px; background: var(--blue-soft); }
+.legend-start { border: 2px solid var(--club-red); border-radius: 999px; background: var(--blue-soft); }
+.legend-end { border: 2px solid var(--green); border-radius: 999px; background: var(--green-soft); }
 .legend-action { border: 2px solid #aaa; border-left: 5px solid var(--club-red); background: white; }
 .legend-shape.diamond { width: 18px; height: 18px; margin: 0 3px; border: 2px solid var(--club-red); border-radius: 0; background: #efd3d8; transform: rotate(45deg); }
 .toast { position: fixed; left: 50%; bottom: 1.5rem; z-index: 50; translate: -50% 150%; padding: .8rem 1rem; border-radius: 10px; color: white; background: var(--navy); box-shadow: var(--shadow); transition: translate .25s; }
