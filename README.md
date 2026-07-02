@@ -52,7 +52,7 @@ Voeg een nieuwe categorie toe aan `categories`. Processen worden automatisch get
 
 ## Publiceren
 
-De app is volledig statisch en kan onder meer op GitHub Pages, Netlify of de bestaande website van de club worden gepubliceerd. Voor GitHub Pages kan de repository vanuit de root van de standaardbranch worden gepubliceerd; er is geen bouwstap nodig.
+De app is volledig statisch en kan onder meer op GitHub Pages, Netlify of de bestaande website van de club worden gepubliceerd. De meegeleverde GitHub Actions-workflow publiceert iedere wijziging op `main` automatisch naar GitHub Pages; er is geen bouwstap nodig.
 
 ## Status
 
