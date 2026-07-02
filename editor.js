@@ -156,7 +156,7 @@ function bindEvents() {
     if (element.dataset.contact) flow.contacts[Number(element.dataset.contactIndex)][element.dataset.contact] = element.value;
     setDirty(); updatePreviewAndValidation();
   }));
-  document.querySelectorAll("[data-meta], [data-owner], [data-node-text], [data-contact]").forEach(input => input.addEventListener("change", () => {
+  document.querySelectorAll("[data-meta], [data-owner], [data-node-text], [data-contact]").forEach(input => input.addEventListener("blur", () => {
     const scrollPosition = window.scrollY;
     render();
     window.scrollTo({ top: scrollPosition });
