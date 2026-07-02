@@ -52,6 +52,11 @@
 .validation-card { border-top: 4px solid var(--club-red); }
 .validation-ok { color: var(--green); font-size: .82rem; font-weight: 750; }
 .validation-list { margin: 0; padding-left: 1.15rem; color: #884559; font-size: .78rem; line-height: 1.6; }
+.danger-zone { border-color: #d9aab1; background: #fff8f9; }
+.danger-zone-content { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.danger-zone h2 { margin-bottom: .35rem; color: #7f1f2e; }
+.danger-zone p { max-width: 720px; margin: 0; color: #765a5f; font-size: .78rem; line-height: 1.5; }
+.button--danger { flex: 0 0 auto; border-color: #8e1f30; color: white; background: #8e1f30; }
 #validation-count { min-width: 28px; padding: .2rem .45rem; border-radius: 999px; color: white; background: var(--club-red); font-size: .7rem; text-align: center; }
 .preview-card { min-height: 400px; border-top: 4px solid var(--club-red); }
 .mini-flow { overflow-x: auto; padding: .5rem; }
@@ -80,6 +85,7 @@ code { padding: .1rem .3rem; border-radius: 4px; background: #e8eaeb; }
   .editor-shell { width: min(100% - 1rem, 1500px); padding-top: 1.25rem; }
   .editor-preview-column { grid-template-columns: 1fr; }
   .form-grid, .contact-editor-row { grid-template-columns: 1fr; }
+  .danger-zone-content { align-items: stretch; flex-direction: column; }
   .route-editor { grid-template-columns: 1fr; }
   .mini-branches { grid-template-columns: 1fr; }
 }
