@@ -3,6 +3,7 @@ import { categories, flowCatalog } from "./data.js";
 let flow;
 let dirty = false;
 let autosaveTimer;
+let loadedFlowId;
 const $ = selector => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const nodeTypes = { start: "Start", action: "Actie", decision: "Vraag", note: "Opmerking", end: "Uitkomst" };
@@ -26,7 +27,50 @@ async function initialize() {
     const item = flowCatalog.find(entry => entry.id === flowId);
     flow = item ? await fetch(item.file).then(response => response.json()) : emptyFlow();
   } else flow = emptyFlow();
+  loadedFlowId = flow.id;
   render();
+}
+
+function localDraftList() {
+  const drafts = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key?.startsWith("lohc-flow-draft:")) continue;
+    try {
+      const draft = JSON.parse(localStorage.getItem(key));
+      if (draft?.id && draft?.nl?.title) drafts.push(draft);
+    } catch { /* Ignore an invalid browser draft. */ }
+  }
+  return drafts;
+}
+
+function editorFlowList() {
+  const entries = new Map(flowCatalog.map(item => [item.id, { id: item.id, title: item.nl.title, local: false }]));
+  for (const draft of localDraftList()) entries.set(draft.id, { id: draft.id, title: draft.nl.title, local: true });
+  return [...entries.values()].sort((a, b) => a.title.localeCompare(b.title, "nl"));
+}
+
+function renderFlowSelector() {
+  const selector = $("#flow-selector");
+  const entries = editorFlowList();
+  if (!entries.some(item => item.id === flow.id)) entries.push({ id: flow.id, title: flow.nl.title, local: true });
+  selector.innerHTML = entries.map(item => `<option value="${escapeHtml(item.id)}"${item.id === flow.id ? " selected" : ""}>${escapeHtml(item.title)}${item.local ? " · lokaal" : ""}</option>`).join("");
+}
+
+async function openFlow(flowId) {
+  if (dirty) saveLocalDraft(true);
+  const saved = localStorage.getItem(`lohc-flow-draft:${flowId}`);
+  if (saved) flow = JSON.parse(saved);
+  else {
+    const item = flowCatalog.find(entry => entry.id === flowId);
+    if (!item) return showToast("Deze flow kon niet worden geopend");
+    flow = await fetch(item.file).then(response => response.json());
+  }
+  loadedFlowId = flow.id;
+  dirty = false;
+  history.replaceState(null, "", `editor.html?flow=${encodeURIComponent(flow.id)}`);
+  render();
+  $("#save-state").textContent = saved ? "Concept lokaal bewaard" : "Gepubliceerde versie";
 }
 
 function setDirty(value = true) {
@@ -40,10 +84,13 @@ function setDirty(value = true) {
 }
 
 function saveLocalDraft(silent = false) {
+  if (loadedFlowId && loadedFlowId !== flow.id) localStorage.removeItem(`lohc-flow-draft:${loadedFlowId}`);
   localStorage.setItem(`lohc-flow-draft:${flow.id}`, JSON.stringify(flow));
+  loadedFlowId = flow.id;
   dirty = false;
   $("#save-state").textContent = "Concept lokaal bewaard";
   $("#save-state").classList.add("is-saved");
+  renderFlowSelector();
   if (!silent) showToast("Concept lokaal bewaard en beschikbaar in de proceswijzer");
 }
 
@@ -152,7 +199,7 @@ function updatePreviewAndValidation() {
   $("#view-flow").href = `index.html#/flow/${encodeURIComponent(flow.id)}`;
 }
 
-function render() { renderDetails(); renderNodes(); renderContacts(); bindEvents(); updatePreviewAndValidation(); }
+function render() { renderFlowSelector(); renderDetails(); renderNodes(); renderContacts(); bindEvents(); updatePreviewAndValidation(); }
 
 function nestedSet(target, path, value) { const [locale, field] = path.split("."); target[locale] ||= {}; target[locale][field] = value; }
 function nodeById(id) { return flow.nodes.find(node => node.id === id); }
@@ -169,6 +216,7 @@ function refreshNodeLabels(nodeId) {
 }
 
 function bindEvents() {
+  $("#flow-selector").onchange = event => openFlow(event.currentTarget.value);
   document.querySelectorAll(".editor-shell input, .editor-shell select, .editor-shell textarea").forEach(input => input.addEventListener("input", event => {
     const element = event.currentTarget;
     if (element.dataset.root) flow[element.dataset.root] = element.value;
@@ -228,7 +276,7 @@ function deleteNode(id) {
 function showToast(message) { const toast = $("#toast"); toast.textContent = message; toast.classList.add("is-visible"); setTimeout(() => toast.classList.remove("is-visible"), 1800); }
 $("#save-draft").addEventListener("click", () => saveLocalDraft(false));
 $("#download-flow").addEventListener("click", () => { const blob = new Blob([`${JSON.stringify(flow, null, 2)}\n`], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${flow.id}.json`; link.click(); URL.revokeObjectURL(url); showToast("JSON gedownload"); });
-$("#new-flow").addEventListener("click", () => { if (dirty && !confirm("Niet-opgeslagen wijzigingen weggooien?")) return; flow = emptyFlow(); setDirty(); render(); });
+$("#new-flow").addEventListener("click", () => { if (dirty) saveLocalDraft(true); flow = emptyFlow(); loadedFlowId = null; history.replaceState(null, "", "editor.html"); setDirty(); render(); });
 $("#import-flow").addEventListener("change", async event => { try { flow = JSON.parse(await event.target.files[0].text()); setDirty(); render(); showToast("Flow geïmporteerd"); } catch { showToast("Dit is geen geldige JSON-flow"); } event.target.value = ""; });
 window.addEventListener("beforeunload", event => { if (!dirty) return; event.preventDefault(); event.returnValue = ""; });
 
