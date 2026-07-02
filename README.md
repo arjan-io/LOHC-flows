@@ -15,6 +15,8 @@ De eerste voorbeeldflow is **Ledenadministratie → Nieuwe inschrijving**.
 - Nederlands en Engels
 - Mobielvriendelijke flowweergave
 - Contactgegevens per proces
+- Visuele editor met live voorbeeld en validatie
+- JSON-import en -export voor processen
 - Print- en deelfunctie
 - Geen database, account of betaalde dienst nodig
 
@@ -28,9 +30,22 @@ python3 -m http.server 8080
 
 Open daarna <http://localhost:8080>.
 
-## Processen toevoegen
+## Processen maken en bewerken
 
-Alle categorieën en processen staan in [`data.js`](data.js). Een proces bevat:
+Open [`editor.html`](editor.html) via de lokale webserver of kies **Bewerk flow** op een procespagina. De editor kan:
+
+- acties, vragen, opmerkingen en uitkomsten toevoegen;
+- per vraag twee of meer routes koppelen;
+- routes apart laten eindigen of bij dezelfde stap laten samenkomen;
+- Nederlandse en Engelse teksten beheren;
+- contacten beheren;
+- ontbrekende en onbereikbare stappen signaleren;
+- concepten lokaal in de browser bewaren;
+- volledige flows importeren en als JSON downloaden.
+
+Plaats een gedownloade flow in [`flows/`](flows/) en voeg de titel en zoekgegevens toe aan `flowCatalog` in [`data.js`](data.js). De technische node-ID's worden door de editor gegenereerd en hoeven niet handmatig te worden beheerd.
+
+Een procesbestand bevat:
 
 - een stabiel `id`;
 - een `category`;
@@ -45,10 +60,10 @@ Kopieer een bestaand procesobject in `flows` en pas de velden aan. Ondersteunde 
 | `start` | Aanleiding of invoer |
 | `action` | Uit te voeren actie |
 | `decision` | Vraag met twee routes |
-| `notice` | Belangrijke mededeling of overdracht |
+| `note` | Belangrijke mededeling of overdracht |
 | `end` | Resultaat van het proces |
 
-Voeg een nieuwe categorie toe aan `categories`. Processen worden automatisch geteld en doorzoekbaar gemaakt.
+Iedere actie wijst met `next` naar een volgende stap. Een vraag bevat routes die ieder naar een eigen doelstap wijzen. Wanneer routes naar dezelfde stap wijzen, toont de viewer ze als een splitsing die later weer samenkomt. De structuur wordt beschreven door [`flows/flow.schema.json`](flows/flow.schema.json).
 
 ## Publiceren
 
@@ -56,7 +71,7 @@ De app is volledig statisch en kan onder meer op GitHub Pages, Netlify of de bes
 
 ## Status
 
-Dit is een eerste werkend prototype. De voorbeeldflow is overgenomen en vereenvoudigd op basis van de aangeleverde schets. De inhoud en e-mailadressen moeten vóór openbaar gebruik door LOHC worden gecontroleerd.
+Dit is een werkend prototype. De eerste registratieflow is overgenomen uit de aangeleverde draw.io-export. De inhoud en e-mailadressen moeten vóór openbaar gebruik door LOHC worden gecontroleerd.
 
 ## Licentie
 
