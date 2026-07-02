@@ -14,7 +14,8 @@ const translations = {
     share: "Deel", print: "Print", edit: "Bewerk flow", copied: "Link gekopieerd", copyEmail: "Kopieer e-mailadres",
     emailCopied: "E-mailadres gekopieerd", loading: "Proces laden…", invalidFlow: "Deze flow kon niet worden geladen.",
     continuesAt: "Vervolg bij", guided: "Begeleid", overview: "Overzicht", chooseAnswer: "Kies een antwoord om verder te gaan",
-    yourRoute: "Jouw route", previousQuestion: "Vorige vraag", startAgain: "Start opnieuw"
+    yourRoute: "Jouw route", previousQuestion: "Vorige vraag", startAgain: "Start opnieuw", localDraft: "Lokaal concept",
+    usePublished: "Gebruik gepubliceerde versie"
   },
   en: {
     brandSubtitle: "Process guide", help: "Need help?", footer: "LOHC Process Guide · Together we keep the club running",
@@ -29,7 +30,8 @@ const translations = {
     share: "Share", print: "Print", edit: "Edit flow", copied: "Link copied", copyEmail: "Copy email address",
     emailCopied: "Email address copied", loading: "Loading process…", invalidFlow: "This flow could not be loaded.",
     continuesAt: "Continues at", guided: "Guided", overview: "Overview", chooseAnswer: "Choose an answer to continue",
-    yourRoute: "Your route", previousQuestion: "Previous question", startAgain: "Start again"
+    yourRoute: "Your route", previousQuestion: "Previous question", startAgain: "Start again", localDraft: "Local draft",
+    usePublished: "Use published version"
   }
 };
 
@@ -98,6 +100,13 @@ function renderCategory(categoryId) {
 
 async function loadFlow(id) {
   if (flowCache.has(id)) return flowCache.get(id);
+  const localDraft = localStorage.getItem(`lohc-flow-draft:${id}`);
+  if (localDraft) {
+    const flow = JSON.parse(localDraft);
+    flow._localDraft = true;
+    flowCache.set(id, flow);
+    return flow;
+  }
   const catalogEntry = flowCatalog.find(flow => flow.id === id);
   if (!catalogEntry) throw new Error("Unknown flow");
   const response = await fetch(catalogEntry.file);
@@ -233,8 +242,8 @@ async function renderFlow(flowId) {
     const mode = getViewMode(flow.id);
     document.title = `${content.title} · LOHC`;
     main.innerHTML = `<section class="content-shell flow-page"><nav class="breadcrumbs"><a href="#/">${t("home")}</a><span>›</span><a href="#" data-category-link>${escapeHtml(category[language].title)}</a><span>›</span><span>${escapeHtml(content.title)}</span></nav>
-      <header class="flow-header"><div><span class="status-pill">● ${t("draft")}</span><h1>${escapeHtml(content.title)}</h1><p>${escapeHtml(content.description)}</p></div>
-      <div class="flow-actions"><a class="icon-button" href="editor.html?flow=${encodeURIComponent(flow.id)}">✎ ${t("edit")}</a><button class="icon-button" id="share-button" type="button">↗ ${t("share")}</button><button class="icon-button" id="print-button" type="button">▣ ${t("print")}</button></div></header>
+      <header class="flow-header"><div><span class="status-pill${flow._localDraft ? " status-pill--local" : ""}">● ${flow._localDraft ? t("localDraft") : t("draft")}</span><h1>${escapeHtml(content.title)}</h1><p>${escapeHtml(content.description)}</p></div>
+      <div class="flow-actions"><a class="icon-button" href="editor.html?flow=${encodeURIComponent(flow.id)}">✎ ${t("edit")}</a>${flow._localDraft ? `<button class="icon-button" id="clear-draft" type="button">↺ ${t("usePublished")}</button>` : ""}<button class="icon-button" id="share-button" type="button">↗ ${t("share")}</button><button class="icon-button" id="print-button" type="button">▣ ${t("print")}</button></div></header>
       <div class="meta-strip"><div class="meta-item"><small>${t("owner")}</small><strong>${escapeHtml(flow.owner[language])}</strong></div><div class="meta-item"><small>${t("reviewed")}</small><strong>${formatDate(flow.reviewed)}</strong></div><div class="meta-item"><small>${t("category")}</small><strong>${escapeHtml(category[language].title)}</strong></div></div>
       ${errors.length ? `<div class="validation-banner">${errors.map(error => `<div>⚠ ${escapeHtml(error)}</div>`).join("")}</div>` : ""}
       ${guidedToolbar(flow, nodes, answers, mode)}
@@ -244,6 +253,7 @@ async function renderFlow(flowId) {
     document.querySelector("[data-category-link]").addEventListener("click", event => { event.preventDefault(); renderCategory(category.id); });
     document.querySelector("#print-button").addEventListener("click", () => window.print());
     document.querySelector("#share-button").addEventListener("click", shareCurrentPage);
+    document.querySelector("#clear-draft")?.addEventListener("click", () => { localStorage.removeItem(`lohc-flow-draft:${flow.id}`); flowCache.delete(flow.id); renderFlow(flow.id); });
     document.querySelectorAll(".copy-email").forEach(button => button.addEventListener("click", () => copyEmail(button.dataset.email)));
     document.querySelectorAll("[data-view-mode]").forEach(button => button.addEventListener("click", () => { sessionStorage.setItem(`lohc-flow-mode:${flow.id}`, button.dataset.viewMode); renderFlow(flow.id); }));
     document.querySelectorAll("[data-answer-node]").forEach(button => button.addEventListener("click", () => {
