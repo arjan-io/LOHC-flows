@@ -2,6 +2,7 @@ import { categories, flowCatalog } from "./data.js";
 
 let flow;
 let dirty = false;
+let autosaveTimer;
 const $ = selector => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const nodeTypes = { start: "Start", action: "Actie", decision: "Vraag", note: "Opmerking", end: "Uitkomst" };
@@ -30,8 +31,20 @@ async function initialize() {
 
 function setDirty(value = true) {
   dirty = value;
-  $("#save-state").textContent = dirty ? "Niet opgeslagen" : "Concept lokaal bewaard";
+  $("#save-state").textContent = dirty ? "Wijzigingen opslaan…" : "Concept lokaal bewaard";
   $("#save-state").classList.toggle("is-saved", !dirty);
+  if (dirty) {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => saveLocalDraft(true), 350);
+  }
+}
+
+function saveLocalDraft(silent = false) {
+  localStorage.setItem(`lohc-flow-draft:${flow.id}`, JSON.stringify(flow));
+  dirty = false;
+  $("#save-state").textContent = "Concept lokaal bewaard";
+  $("#save-state").classList.add("is-saved");
+  if (!silent) showToast("Concept lokaal bewaard en beschikbaar in de proceswijzer");
 }
 
 function options(selected, includeNone = true) {
@@ -57,7 +70,7 @@ function renderDetails() {
 function renderNodes() {
   const insertionSelect = $("#insert-after");
   const previousInsertion = insertionSelect.value;
-  insertionSelect.innerHTML = `<option value="">Los toevoegen (later koppelen)</option>${flow.nodes.filter(node => !["decision", "end"].includes(node.type)).map(node => `<option value="${escapeHtml(node.id)}">Invoegen na: ${escapeHtml(node.nl.title)}</option>`).join("")}`;
+  insertionSelect.innerHTML = `<option value="">Kies waar de nieuwe stap moet komen…</option><option value="__loose">Los toevoegen (later koppelen)</option>${flow.nodes.filter(node => !["decision", "end"].includes(node.type)).map(node => `<option value="${escapeHtml(node.id)}">Invoegen na: ${escapeHtml(node.nl.title)}</option>`).join("")}`;
   if ([...insertionSelect.options].some(option => option.value === previousInsertion)) insertionSelect.value = previousInsertion;
   $("#node-list").innerHTML = flow.nodes.map(node => `<article class="node-editor" data-type="${node.type}" data-node-card="${escapeHtml(node.id)}">
     <header class="node-editor-header"><span class="node-type">${nodeTypes[node.type]}</span><strong>${escapeHtml(node.nl.title)}</strong>${node.id !== flow.entry ? `<button class="delete-node" type="button" data-delete-node="${escapeHtml(node.id)}">Verwijder</button>` : ""}</header>
@@ -189,11 +202,13 @@ function generateInternalId(prefix) {
   return `${prefix}-${random}`;
 }
 function addNode(type) {
+  const insertionChoice = $("#insert-after").value;
+  if (!insertionChoice) { showToast("Kies eerst waar de nieuwe stap moet komen"); return; }
   const id = generateInternalId("node"); const labels = { action: ["Nieuwe actie", "New action"], decision: ["Nieuwe vraag?", "New question?"], note: ["Nieuwe opmerking", "New note"], end: ["Proces afgerond", "Process completed"] };
   const node = { id, type, nl: { title: labels[type][0] }, en: { title: labels[type][1] } };
   if (type === "decision") node.routes = [{ id: generateInternalId("route"), nl: "Ja", en: "Yes", target: "" }, { id: generateInternalId("route"), nl: "Nee", en: "No", target: "" }];
   else if (type !== "end") node.next = "";
-  const insertAfter = $("#insert-after").value;
+  const insertAfter = insertionChoice === "__loose" ? "" : insertionChoice;
   if (insertAfter) {
     const source = nodeById(insertAfter);
     if (type !== "end") node.next = source.next || "";
@@ -211,7 +226,7 @@ function deleteNode(id) {
 }
 
 function showToast(message) { const toast = $("#toast"); toast.textContent = message; toast.classList.add("is-visible"); setTimeout(() => toast.classList.remove("is-visible"), 1800); }
-$("#save-draft").addEventListener("click", () => { localStorage.setItem(`lohc-flow-draft:${flow.id}`, JSON.stringify(flow)); setDirty(false); showToast("Concept lokaal bewaard"); });
+$("#save-draft").addEventListener("click", () => saveLocalDraft(false));
 $("#download-flow").addEventListener("click", () => { const blob = new Blob([`${JSON.stringify(flow, null, 2)}\n`], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${flow.id}.json`; link.click(); URL.revokeObjectURL(url); showToast("JSON gedownload"); });
 $("#new-flow").addEventListener("click", () => { if (dirty && !confirm("Niet-opgeslagen wijzigingen weggooien?")) return; flow = emptyFlow(); setDirty(); render(); });
 $("#import-flow").addEventListener("change", async event => { try { flow = JSON.parse(await event.target.files[0].text()); setDirty(); render(); showToast("Flow geïmporteerd"); } catch { showToast("Dit is geen geldige JSON-flow"); } event.target.value = ""; });
