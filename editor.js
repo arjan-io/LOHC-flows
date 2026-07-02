@@ -55,6 +55,10 @@ function renderDetails() {
 }
 
 function renderNodes() {
+  const insertionSelect = $("#insert-after");
+  const previousInsertion = insertionSelect.value;
+  insertionSelect.innerHTML = `<option value="">Los toevoegen (later koppelen)</option>${flow.nodes.filter(node => !["decision", "end"].includes(node.type)).map(node => `<option value="${escapeHtml(node.id)}">Invoegen na: ${escapeHtml(node.nl.title)}</option>`).join("")}`;
+  if ([...insertionSelect.options].some(option => option.value === previousInsertion)) insertionSelect.value = previousInsertion;
   $("#node-list").innerHTML = flow.nodes.map(node => `<article class="node-editor" data-type="${node.type}" data-node-card="${escapeHtml(node.id)}">
     <header class="node-editor-header"><span class="node-type">${nodeTypes[node.type]}</span><strong>${escapeHtml(node.nl.title)}</strong>${node.id !== flow.entry ? `<button class="delete-node" type="button" data-delete-node="${escapeHtml(node.id)}">Verwijder</button>` : ""}</header>
     <div class="node-editor-body"><div class="form-grid">
@@ -81,22 +85,22 @@ function validate() {
   const errors = [];
   const ids = new Set();
   for (const node of flow.nodes) {
-    if (!/^[a-z0-9-]+$/.test(node.id)) errors.push(`Ongeldig ID: “${node.id || "leeg"}”. Gebruik kleine letters, cijfers en streepjes.`);
-    if (ids.has(node.id)) errors.push(`Dubbel stap-ID: ${node.id}.`);
+    if (!/^[a-z0-9-]+$/.test(node.id)) errors.push(`“${node.nl?.title || "Naamloze stap"}” heeft intern een ongeldig kenmerk.`);
+    if (ids.has(node.id)) errors.push(`“${node.nl?.title || "Naamloze stap"}” heeft intern een dubbel kenmerk.`);
     ids.add(node.id);
-    if (!node.nl?.title || !node.en?.title) errors.push(`${node.id}: Nederlandse en Engelse titel zijn verplicht.`);
-    if (node.type === "decision" && (!node.routes || node.routes.length < 2)) errors.push(`${node.id}: een vraag heeft minimaal twee routes nodig.`);
+    if (!node.nl?.title || !node.en?.title) errors.push(`Een stap mist een Nederlandse of Engelse titel.`);
+    if (node.type === "decision" && (!node.routes || node.routes.length < 2)) errors.push(`“${node.nl.title}” heeft minimaal twee routes nodig.`);
   }
   if (!ids.has(flow.entry)) errors.push(`De startstap “${flow.entry}” bestaat niet.`);
   for (const node of flow.nodes) {
-    if (node.type !== "decision" && node.type !== "end" && !node.next) errors.push(`${node.id}: kies een volgende stap of maak hiervan een uitkomst.`);
-    if (node.next && !ids.has(node.next)) errors.push(`${node.id}: volgende stap “${node.next}” bestaat niet.`);
-    for (const route of node.routes || []) if (!route.target || !ids.has(route.target)) errors.push(`${node.id}/${route.id}: kies een geldige doelstap.`);
+    if (node.type !== "decision" && node.type !== "end" && !node.next) errors.push(`“${node.nl.title}”: kies een volgende stap of maak hiervan een uitkomst.`);
+    if (node.next && !ids.has(node.next)) errors.push(`“${node.nl.title}” verwijst naar een ontbrekende vervolgstap.`);
+    for (const route of node.routes || []) if (!route.target || !ids.has(route.target)) errors.push(`“${node.nl.title}” / “${route.nl}”: kies een geldige doelstap.`);
   }
   const reachable = new Set();
   function walk(id) { if (!id || reachable.has(id) || !ids.has(id)) return; reachable.add(id); const node = flow.nodes.find(item => item.id === id); if (node.next) walk(node.next); for (const route of node.routes || []) walk(route.target); }
   walk(flow.entry);
-  for (const id of ids) if (!reachable.has(id)) errors.push(`${id}: deze stap is niet bereikbaar vanaf de start.`);
+  for (const id of ids) if (!reachable.has(id)) errors.push(`“${nodeById(id)?.nl.title || "Naamloze stap"}” is nog niet gekoppeld aan de flow.`);
   return errors;
 }
 
@@ -127,7 +131,11 @@ function updatePreviewAndValidation() {
   const errors = validate();
   $("#validation-count").textContent = errors.length;
   $("#validation-results").innerHTML = errors.length ? `<ul class="validation-list">${errors.map(error => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : `<div class="validation-ok">✓ Flow is compleet en verbonden.</div>`;
-  $("#flow-preview").innerHTML = miniPath(flow.entry);
+  const reachable = new Set();
+  function walk(id) { if (!id || reachable.has(id)) return; const node = nodeById(id); if (!node) return; reachable.add(id); if (node.next) walk(node.next); for (const route of node.routes || []) walk(route.target); }
+  walk(flow.entry);
+  const looseNodes = flow.nodes.filter(node => !reachable.has(node.id));
+  $("#flow-preview").innerHTML = `${miniPath(flow.entry)}${looseNodes.length ? `<section class="mini-unconnected"><h3>Losse, nog niet gekoppelde stappen</h3><div class="mini-unconnected-list">${looseNodes.map(node => `<div class="mini-unconnected-item">${escapeHtml(node.nl.title)}</div>`).join("")}</div></section>` : ""}`;
   $("#view-flow").href = `index.html#/flow/${encodeURIComponent(flow.id)}`;
 }
 
@@ -171,7 +179,14 @@ function addNode(type) {
   const node = { id, type, nl: { title: labels[type][0] }, en: { title: labels[type][1] } };
   if (type === "decision") node.routes = [{ id: generateInternalId("route"), nl: "Ja", en: "Yes", target: "" }, { id: generateInternalId("route"), nl: "Nee", en: "No", target: "" }];
   else if (type !== "end") node.next = "";
+  const insertAfter = $("#insert-after").value;
+  if (insertAfter) {
+    const source = nodeById(insertAfter);
+    if (type !== "end") node.next = source.next || "";
+    source.next = id;
+  }
   flow.nodes.push(node); setDirty(); render();
+  showToast(insertAfter ? `${labels[type][0]} ingevoegd en gekoppeld` : `${labels[type][0]} toegevoegd als losse stap`);
   document.querySelector(`[data-node-card="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 function deleteNode(id) {
