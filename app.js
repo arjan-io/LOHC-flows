@@ -52,7 +52,12 @@ function updateChrome() {
   toggle.setAttribute("aria-label", language === "nl" ? "Switch to English" : "Wissel naar Nederlands");
 }
 
-const categoryFor = id => categories.find(category => category.id === id);
+const customCategoryKey = "lohc-custom-categories";
+function customCategories() {
+  try { return JSON.parse(localStorage.getItem(customCategoryKey)) || []; } catch { return []; }
+}
+function allCategories() { return [...categories, ...customCategories()]; }
+const categoryFor = id => allCategories().find(category => category.id === id);
 function localDrafts() {
   const drafts = [];
   for (let index = 0; index < localStorage.length; index += 1) {
@@ -101,6 +106,7 @@ function bindCards() {
     navigate(`/flow/${button.dataset.flow}`);
   }));
   document.querySelectorAll("[data-category]").forEach(button => button.addEventListener("click", () => renderCategory(button.dataset.category)));
+  document.querySelectorAll("[data-home-link]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); renderHome(); window.scrollTo({ top: 0 }); }));
 }
 
 function renderHome(searchTerm = "") {
@@ -111,7 +117,7 @@ function renderHome(searchTerm = "") {
     <p class="hero-copy">${t("heroCopy")}</p><label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span>
     <input class="search-input" id="flow-search" type="search" value="${escapeHtml(searchTerm)}" placeholder="${t("searchPlaceholder")}" aria-label="${t("searchPlaceholder")}" autocomplete="off"></label></div></section>
     <section class="content-shell"><div class="section-heading"><div><h2>${term ? t("results")(matches.length) : t("categories")}</h2><p>${term ? t("searchPlaceholder") : t("categoriesCopy")}</p></div></div>
-    <div class="category-grid">${term ? (matches.map(flowCard).join("") || `<div class="empty-state">${t("noResults")}</div>`) : categories.map(categoryCard).join("")}</div></section>`;
+    <div class="category-grid">${term ? (matches.map(flowCard).join("") || `<div class="empty-state">${t("noResults")}</div>`) : allCategories().map(categoryCard).join("")}</div></section>`;
   const input = document.querySelector("#flow-search");
   input.addEventListener("input", event => renderHome(event.target.value));
   if (term) { input.focus({ preventScroll: true }); input.setSelectionRange(input.value.length, input.value.length); }
@@ -121,7 +127,7 @@ function renderHome(searchTerm = "") {
 function renderCategory(categoryId) {
   const category = categoryFor(categoryId);
   const flows = availableFlows().filter(flow => flow.category === categoryId);
-  main.innerHTML = `<section class="content-shell"><nav class="breadcrumbs"><a href="#/">${t("home")}</a><span>›</span><span>${escapeHtml(category[language].title)}</span></nav>
+  main.innerHTML = `<section class="content-shell"><nav class="breadcrumbs"><a href="#/" data-home-link>${t("home")}</a><span>›</span><span>${escapeHtml(category[language].title)}</span></nav>
     <div class="section-heading"><div><h2>${escapeHtml(category[language].title)}</h2><p>${escapeHtml(category[language].description)}</p></div><span class="result-count">${t("processes")(flows.length)}</span></div>
     <div class="category-grid">${flows.length ? flows.map(flowCard).join("") : `<div class="empty-state">${t("noProcesses")}</div>`}</div></section>`;
   bindCards();
