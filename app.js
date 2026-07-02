@@ -53,7 +53,32 @@ function updateChrome() {
 }
 
 const categoryFor = id => categories.find(category => category.id === id);
-const flowCount = categoryId => flowCatalog.filter(flow => flow.category === categoryId).length;
+function localDrafts() {
+  const drafts = [];
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key?.startsWith("lohc-flow-draft:")) continue;
+    try {
+      const flow = JSON.parse(localStorage.getItem(key));
+      if (flow?.id && flow?.nl?.title && flow?.en?.title) drafts.push(flow);
+    } catch { /* Ignore an invalid browser draft. */ }
+  }
+  return drafts;
+}
+
+function availableFlows() {
+  const catalog = new Map(flowCatalog.map(flow => [flow.id, flow]));
+  for (const flow of localDrafts()) {
+    catalog.set(flow.id, {
+      id: flow.id, category: flow.category, _localDraft: true,
+      nl: { title: flow.nl.title, description: flow.nl.description || "", keywords: flow.nl.keywords || [] },
+      en: { title: flow.en.title, description: flow.en.description || "", keywords: flow.en.keywords || [] }
+    });
+  }
+  return [...catalog.values()];
+}
+
+const flowCount = categoryId => availableFlows().filter(flow => flow.category === categoryId).length;
 
 function categoryCard(category) {
   const count = flowCount(category.id);
@@ -71,13 +96,17 @@ function flowCard(flow) {
 }
 
 function bindCards() {
-  document.querySelectorAll("[data-flow]").forEach(button => button.addEventListener("click", () => navigate(`/flow/${button.dataset.flow}`)));
+  document.querySelectorAll("[data-flow]").forEach(button => button.addEventListener("click", () => {
+    sessionStorage.removeItem(answerStorageKey(button.dataset.flow));
+    navigate(`/flow/${button.dataset.flow}`);
+  }));
   document.querySelectorAll("[data-category]").forEach(button => button.addEventListener("click", () => renderCategory(button.dataset.category)));
 }
 
 function renderHome(searchTerm = "") {
   const term = searchTerm.trim().toLocaleLowerCase(language);
-  const matches = term ? flowCatalog.filter(flow => [flow[language].title, flow[language].description, ...flow[language].keywords].join(" ").toLocaleLowerCase(language).includes(term)) : [];
+  const flows = availableFlows();
+  const matches = term ? flows.filter(flow => [flow[language].title, flow[language].description, ...(flow[language].keywords || [])].join(" ").toLocaleLowerCase(language).includes(term)) : [];
   main.innerHTML = `<section class="hero"><div class="hero-content"><p class="eyebrow">${t("eyebrow")}</p><h1>${t("heroTitle")}</h1>
     <p class="hero-copy">${t("heroCopy")}</p><label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span>
     <input class="search-input" id="flow-search" type="search" value="${escapeHtml(searchTerm)}" placeholder="${t("searchPlaceholder")}" aria-label="${t("searchPlaceholder")}" autocomplete="off"></label></div></section>
@@ -91,7 +120,7 @@ function renderHome(searchTerm = "") {
 
 function renderCategory(categoryId) {
   const category = categoryFor(categoryId);
-  const flows = flowCatalog.filter(flow => flow.category === categoryId);
+  const flows = availableFlows().filter(flow => flow.category === categoryId);
   main.innerHTML = `<section class="content-shell"><nav class="breadcrumbs"><a href="#/">${t("home")}</a><span>›</span><span>${escapeHtml(category[language].title)}</span></nav>
     <div class="section-heading"><div><h2>${escapeHtml(category[language].title)}</h2><p>${escapeHtml(category[language].description)}</p></div><span class="result-count">${t("processes")(flows.length)}</span></div>
     <div class="category-grid">${flows.length ? flows.map(flowCard).join("") : `<div class="empty-state">${t("noProcesses")}</div>`}</div></section>`;
