@@ -141,6 +141,21 @@ function renderContacts() {
     <div id="contact-rows">${flow.contacts.map((contact, index) => `<div class="contact-editor-row"><div class="field"><label>Rol Nederlands</label><input data-contact="nl" data-contact-index="${index}" value="${escapeHtml(contact.nl)}"></div><div class="field"><label>Rol Engels</label><input data-contact="en" data-contact-index="${index}" value="${escapeHtml(contact.en)}"></div><div class="field"><label>E-mailadres</label><input type="email" data-contact="email" data-contact-index="${index}" value="${escapeHtml(contact.email)}"></div><button class="delete-contact" type="button" data-delete-contact="${index}">Verwijder</button></div>`).join("")}</div>`;
 }
 
+function renderDangerZone() {
+  const published = flowCatalog.some(item => item.id === flow.id);
+  const hasLocalDraft = Boolean(localStorage.getItem(`lohc-flow-draft:${flow.id}`));
+  let copy = "Deze flow bestaat alleen in deze browser. Verwijderen kan niet ongedaan worden gemaakt.";
+  let button = `<button class="button button--danger" id="delete-flow" type="button">Verwijder flow</button>`;
+  if (published && hasLocalDraft) {
+    copy = "Verwijder alleen het lokale concept en herstel de gepubliceerde versie uit GitHub.";
+    button = `<button class="button button--danger" id="delete-flow" type="button">Verwijder lokaal concept</button>`;
+  } else if (published) {
+    copy = "Dit is een gepubliceerde GitHub-flow. Verwijder het JSON-bestand en de catalogusvermelding in GitHub om deze voor iedereen te verwijderen.";
+    button = "";
+  }
+  $("#danger-zone").innerHTML = `<div class="danger-zone-content"><div><p class="section-kicker">Gevarenzone</p><h2>Flow verwijderen</h2><p>${copy}</p></div>${button}</div>`;
+}
+
 function validate() {
   const errors = [];
   const ids = new Set();
@@ -199,7 +214,7 @@ function updatePreviewAndValidation() {
   $("#view-flow").href = `index.html#/flow/${encodeURIComponent(flow.id)}`;
 }
 
-function render() { renderFlowSelector(); renderDetails(); renderNodes(); renderContacts(); bindEvents(); updatePreviewAndValidation(); }
+function render() { renderFlowSelector(); renderDetails(); renderNodes(); renderContacts(); renderDangerZone(); bindEvents(); updatePreviewAndValidation(); }
 
 function nestedSet(target, path, value) { const [locale, field] = path.split("."); target[locale] ||= {}; target[locale][field] = value; }
 function nodeById(id) { return flow.nodes.find(node => node.id === id); }
@@ -243,6 +258,28 @@ function bindEvents() {
   document.querySelectorAll("[data-delete-route]").forEach(button => button.addEventListener("click", () => { nodeById(button.dataset.node).routes.splice(Number(button.dataset.deleteRoute), 1); setDirty(); render(); }));
   document.querySelectorAll("[data-delete-contact]").forEach(button => button.addEventListener("click", () => { flow.contacts.splice(Number(button.dataset.deleteContact), 1); setDirty(); render(); }));
   $("#add-contact").addEventListener("click", () => { flow.contacts.push({ nl: "Nieuwe contactrol", en: "New contact role", email: "" }); setDirty(); render(); });
+  $("#delete-flow")?.addEventListener("click", deleteCurrentFlow);
+}
+
+async function deleteCurrentFlow() {
+  const published = flowCatalog.some(item => item.id === flow.id);
+  const confirmation = prompt(`Je staat op het punt “${flow.nl.title}” ${published ? "als lokaal concept " : ""}te verwijderen. Typ delete om te bevestigen.`);
+  if (confirmation?.trim().toLowerCase() !== "delete") return showToast("Verwijderen geannuleerd");
+  clearTimeout(autosaveTimer);
+  const deletedId = flow.id;
+  localStorage.removeItem(`lohc-flow-draft:${deletedId}`);
+  sessionStorage.removeItem(`lohc-flow-answers:${deletedId}`);
+  dirty = false;
+  loadedFlowId = null;
+  if (published) {
+    await openFlow(deletedId);
+    showToast("Lokaal concept verwijderd; gepubliceerde versie hersteld");
+    return;
+  }
+  const next = editorFlowList()[0];
+  if (next) await openFlow(next.id);
+  else { flow = emptyFlow(); loadedFlowId = flow.id; history.replaceState(null, "", "editor.html"); render(); }
+  showToast("Flow verwijderd");
 }
 
 function generateInternalId(prefix) {
