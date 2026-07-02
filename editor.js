@@ -7,6 +7,12 @@ let loadedFlowId;
 const $ = selector => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const nodeTypes = { start: "Start", action: "Actie", decision: "Vraag", note: "Opmerking", end: "Uitkomst" };
+const customCategoryKey = "lohc-custom-categories";
+
+function customCategories() {
+  try { return JSON.parse(localStorage.getItem(customCategoryKey)) || []; } catch { return []; }
+}
+function editorCategories() { return [...categories, ...customCategories()]; }
 
 function emptyFlow() {
   const startId = generateInternalId("node");
@@ -102,7 +108,7 @@ function renderDetails() {
   $("#flow-details").innerHTML = `<div class="editor-card-heading"><div><p class="section-kicker">Algemeen</p><h2>Flowgegevens</h2></div></div>
     <div class="form-grid">
       <div class="field"><label>Technisch ID</label><input data-root="id" value="${escapeHtml(flow.id)}"></div>
-      <div class="field"><label>Categorie</label><select data-root="category">${categories.map(category => `<option value="${category.id}"${category.id === flow.category ? " selected" : ""}>${escapeHtml(category.nl.title)}</option>`).join("")}</select></div>
+      <div class="field"><label>Categorie</label><div class="category-picker"><select data-root="category">${editorCategories().map(category => `<option value="${category.id}"${category.id === flow.category ? " selected" : ""}>${escapeHtml(category.nl.title)}</option>`).join("")}</select><button class="button button--quiet" id="add-category" type="button">+ Nieuwe categorie</button></div></div>
       <div class="field"><label>Titel Nederlands</label><input data-meta="nl.title" value="${escapeHtml(flow.nl.title)}"></div>
       <div class="field"><label>Titel Engels</label><input data-meta="en.title" value="${escapeHtml(flow.en.title)}"></div>
       <div class="field field--wide"><label>Omschrijving Nederlands</label><textarea data-meta="nl.description">${escapeHtml(flow.nl.description)}</textarea></div>
@@ -258,7 +264,30 @@ function bindEvents() {
   document.querySelectorAll("[data-delete-route]").forEach(button => button.addEventListener("click", () => { nodeById(button.dataset.node).routes.splice(Number(button.dataset.deleteRoute), 1); setDirty(); render(); }));
   document.querySelectorAll("[data-delete-contact]").forEach(button => button.addEventListener("click", () => { flow.contacts.splice(Number(button.dataset.deleteContact), 1); setDirty(); render(); }));
   $("#add-contact").addEventListener("click", () => { flow.contacts.push({ nl: "Nieuwe contactrol", en: "New contact role", email: "" }); setDirty(); render(); });
+  $("#add-category").addEventListener("click", addCategory);
   $("#delete-flow")?.addEventListener("click", deleteCurrentFlow);
+}
+
+function addCategory() {
+  const nlTitle = prompt("Naam van de nieuwe categorie (Nederlands):")?.trim();
+  if (!nlTitle) return;
+  const enTitle = prompt("Naam van de categorie in het Engels (optioneel):", nlTitle)?.trim() || nlTitle;
+  if (!confirm(`Categorie “${nlTitle}” aanmaken?`)) return;
+  const baseId = nlTitle.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "categorie";
+  const usedIds = new Set(editorCategories().map(category => category.id));
+  let id = baseId;
+  let suffix = 2;
+  while (usedIds.has(id)) id = `${baseId}-${suffix++}`;
+  const category = {
+    id, icon: "◇",
+    nl: { title: nlTitle, description: "Eigen categorie." },
+    en: { title: enTitle, description: "Custom category." }
+  };
+  localStorage.setItem(customCategoryKey, JSON.stringify([...customCategories(), category]));
+  flow.category = id;
+  setDirty();
+  render();
+  showToast(`Categorie “${nlTitle}” aangemaakt en geselecteerd`);
 }
 
 async function deleteCurrentFlow() {
