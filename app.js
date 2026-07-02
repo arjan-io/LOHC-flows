@@ -27,7 +27,9 @@ const translations = {
     decision: "Beslissing",
     share: "Deel",
     print: "Print",
-    copied: "Link gekopieerd"
+    copied: "Link gekopieerd",
+    copyEmail: "Kopieer e-mailadres",
+    emailCopied: "E-mailadres gekopieerd"
   },
   en: {
     brandSubtitle: "Process guide",
@@ -55,7 +57,9 @@ const translations = {
     decision: "Decision",
     share: "Share",
     print: "Print",
-    copied: "Link copied"
+    copied: "Link copied",
+    copyEmail: "Copy email address",
+    emailCopied: "Email address copied"
   }
 };
 
@@ -170,7 +174,19 @@ function renderCategory(categoryId) {
 
 function stepTemplate(step) {
   if (step.type === "decision") {
-    return `<li class="flow-step"><div class="decision-block"><div class="decision"><strong>${escapeHtml(step.title)}</strong></div><div class="branches">${step.branches.map((branch, index) => `<div class="branch"><b>${index === 0 ? branch.split("—")[0] : branch.split("—")[0]}</b><span>${escapeHtml(branch.includes("—") ? branch.split("—").slice(1).join("—").trim() : branch)}</span></div>`).join("")}</div></div></li>`;
+    const branches = step.branches.map(branch => {
+      if (typeof branch !== "string") return branch;
+      const parts = branch.split("—");
+      return { label: parts[0].trim(), title: parts.slice(1).join("—").trim() || parts[0].trim() };
+    });
+    return `<li class="flow-step"><div class="decision-block"><div class="decision"><strong>${escapeHtml(step.title)}</strong></div><div class="branches">${branches.map(branch => `
+      <div class="branch${branch.terminal ? " branch--terminal" : ""}${branch.continues ? " branch--continues" : ""}">
+        <b>${escapeHtml(branch.label)}</b>
+        <strong>${escapeHtml(branch.title)}</strong>
+        ${branch.detail ? `<small>${escapeHtml(branch.detail)}</small>` : ""}
+        ${branch.terminal ? `<span class="branch-outcome">✓ ${escapeHtml(branch.outcome)}</span>` : ""}
+        ${branch.continues ? `<span class="branch-continues">↓ ${language === "nl" ? "vervolg" : "continue"}</span>` : ""}
+      </div>`).join("")}</div></div></li>`;
   }
   return `<li class="flow-step"><div class="node ${step.type}"><strong>${escapeHtml(step.title)}</strong>${step.detail ? `<small>${escapeHtml(step.detail)}</small>` : ""}</div></li>`;
 }
@@ -207,7 +223,7 @@ function renderFlow(flowId) {
       <div class="flow-layout">
         <section class="flow-panel" aria-label="${escapeHtml(content.title)}"><ol class="flow-list">${content.steps.map(stepTemplate).join("")}</ol></section>
         <aside class="flow-sidebar">
-          <section class="sidebar-card"><h2>${t("contacts")}</h2>${flow.contacts.map(contact => `<div class="contact"><strong>${escapeHtml(contact[language])}</strong><a href="mailto:${contact.email}">${escapeHtml(contact.email)}</a></div>`).join("")}</section>
+          <section class="sidebar-card"><h2>${t("contacts")}</h2>${flow.contacts.map(contact => `<div class="contact"><div class="contact-details"><strong>${escapeHtml(contact[language])}</strong><a href="mailto:${contact.email}">${escapeHtml(contact.email)}</a></div><button class="copy-email" type="button" data-email="${escapeHtml(contact.email)}" aria-label="${t("copyEmail")}: ${escapeHtml(contact.email)}" title="${t("copyEmail")}">▣</button></div>`).join("")}</section>
           <section class="sidebar-card"><h2>${t("legend")}</h2><div class="legend-row"><span class="legend-shape"></span>${t("startEnd")}</div><div class="legend-row"><span class="legend-shape" style="border-color:var(--navy);background:white"></span>${t("action")}</div><div class="legend-row"><span class="legend-shape diamond"></span>${t("decision")}</div></section>
         </aside>
       </div>
@@ -215,6 +231,15 @@ function renderFlow(flowId) {
   document.querySelector("[data-category-link]").addEventListener("click", event => { event.preventDefault(); renderCategory(category.id); });
   document.querySelector("#print-button").addEventListener("click", () => window.print());
   document.querySelector("#share-button").addEventListener("click", shareCurrentPage);
+  document.querySelectorAll(".copy-email").forEach(button => button.addEventListener("click", () => copyEmail(button.dataset.email)));
+}
+
+async function copyEmail(email) {
+  await navigator.clipboard.writeText(email);
+  const toast = document.querySelector("#toast");
+  toast.textContent = `${t("emailCopied")}: ${email}`;
+  toast.classList.add("is-visible");
+  setTimeout(() => toast.classList.remove("is-visible"), 1800);
 }
 
 async function shareCurrentPage() {
