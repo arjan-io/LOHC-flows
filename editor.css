@@ -5,6 +5,8 @@
 .editor-header .button--quiet { color: white; border-color: #555; background: #363636; }
 .editor-header .button:not(.button--quiet):not(.button--primary) { color: var(--charcoal); border-color: white; background: white; }
 .editor-header-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; }
+.flow-switcher { display: flex; align-items: center; gap: .4rem; color: #d8cfd1; font-size: .7rem; font-weight: 750; }
+.flow-switcher select { max-width: 220px; min-height: 38px; border: 1px solid #555; border-radius: 9px; padding: .45rem 2rem .45rem .65rem; color: white; background: #363636; font: inherit; }
 .save-state { margin-right: .4rem; color: var(--muted); font-size: .75rem; }
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: .55rem .8rem; border: 1px solid var(--charcoal); border-radius: 9px; background: var(--charcoal); color: white; font-size: .78rem; font-weight: 750; text-decoration: none; cursor: pointer; }
 .button--quiet { color: var(--charcoal); background: white; border-color: var(--line); }
