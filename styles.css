@@ -133,18 +133,27 @@ a { color: inherit; }
 .node.notice { border-color: var(--orange); background: var(--orange-soft); }
 .node.end { border-color: var(--green); background: var(--green-soft); }
 .decision-block { width: 100%; display: flex; flex-direction: column; align-items: center; }
-.decision { width: 155px; min-height: 112px; display: grid; place-items: center; padding: 1.6rem; background: var(--yellow-soft); border: 2px solid var(--yellow); transform: rotate(45deg); margin: 22px 0; }
+.decision { width: 144px; height: 144px; display: grid; place-items: center; padding: 1.45rem; background: var(--yellow-soft); border: 2px solid var(--yellow); transform: rotate(45deg); margin: 34px 0; }
 .decision strong { color: var(--navy); text-align: center; transform: rotate(-45deg); font-size: .88rem; }
 .branches { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin: .5rem 0; }
-.branch { border: 1px solid var(--line); border-radius: 12px; background: #f8fafb; padding: .85rem; text-align: center; }
+.branch { border: 1px solid var(--line); border-radius: 12px; background: #f8fafb; padding: .85rem; text-align: center; display: flex; flex-direction: column; align-items: center; gap: .3rem; }
 .branch b { display: block; color: var(--blue); font-size: .73rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .35rem; }
-.branch span { color: var(--ink); font-size: .86rem; line-height: 1.4; }
+.branch > strong { color: var(--ink); font-size: .9rem; }
+.branch small { color: var(--muted); font-size: .77rem; line-height: 1.45; }
+.branch--terminal { border-color: #8bc5a9; background: var(--green-soft); }
+.branch-outcome { margin-top: .35rem; border-radius: 999px; padding: .28rem .55rem; color: var(--green); background: white; font-size: .7rem; font-weight: 800; }
+.branch--continues { border-color: #9fc8df; background: var(--blue-soft); }
+.branch-continues { margin-top: auto; padding-top: .35rem; color: var(--blue); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.flow-sidebar { position: sticky; top: 90px; max-height: calc(100vh - 110px); overflow-y: auto; scrollbar-width: thin; }
 .sidebar-card { margin-bottom: 1rem; padding: 1.25rem; background: white; border: 1px solid var(--line); border-radius: 14px; }
 .sidebar-card h2 { margin: 0 0 1rem; color: var(--navy); font-size: 1rem; }
-.contact { padding: .7rem 0; border-top: 1px solid var(--line); }
+.contact { padding: .7rem 0; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
 .contact:first-of-type { border-top: 0; padding-top: 0; }
+.contact-details { min-width: 0; }
 .contact strong { display: block; font-size: .84rem; }
 .contact a { color: var(--blue); font-size: .8rem; text-decoration: none; overflow-wrap: anywhere; }
+.copy-email { flex: 0 0 auto; display: grid; place-items: center; width: 31px; height: 31px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafb; color: var(--blue); cursor: pointer; }
+.copy-email:hover, .copy-email:focus-visible { border-color: var(--blue); background: var(--blue-soft); outline: none; }
 .legend-row { display: flex; align-items: center; gap: .6rem; margin-top: .65rem; color: var(--muted); font-size: .8rem; }
 .legend-shape { width: 24px; height: 16px; border: 2px solid var(--blue); border-radius: 5px; background: var(--blue-soft); }
 .legend-shape.diamond { width: 16px; height: 16px; margin: 0 4px; transform: rotate(45deg); border-color: var(--yellow); background: var(--yellow-soft); border-radius: 0; }
@@ -155,7 +164,7 @@ footer { padding: 1.5rem; background: var(--navy); color: #b9cad5; text-align: c
 @media (max-width: 850px) {
   .category-grid { grid-template-columns: repeat(2, 1fr); }
   .flow-layout { grid-template-columns: 1fr; }
-  .flow-sidebar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .flow-sidebar { position: static; max-height: none; overflow: visible; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
   .sidebar-card { margin: 0; }
 }
 @media (max-width: 560px) {
@@ -168,7 +177,7 @@ footer { padding: 1.5rem; background: var(--navy); color: #b9cad5; text-align: c
   .meta-strip { grid-template-columns: 1fr; }
   .flow-sidebar { grid-template-columns: 1fr; }
   .branches { grid-template-columns: 1fr; }
-  .decision { width: 130px; min-height: 96px; }
+  .decision { width: 124px; height: 124px; padding: 1.2rem; }
 }
 @media print {
   .site-header, footer, .breadcrumbs, .flow-actions { display: none; }
