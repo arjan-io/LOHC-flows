@@ -54,13 +54,13 @@ a { color: inherit; }
   width: 42px;
   height: 42px;
   border-radius: 50% 50% 44% 56%;
+  overflow: hidden;
   color: white;
-  background: var(--navy);
-  font-weight: 900;
-  font-style: italic;
-  font-size: 1.35rem;
-  box-shadow: inset -5px -4px 0 #c95b6b;
+  background: white;
+  border: 2px solid var(--club-red);
 }
+.brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+.status-pill--local { color: #7a1d2b; background: #f4dce0; }
 .brand strong { display: block; color: var(--navy); font-size: 1.05rem; letter-spacing: .04em; }
 .brand small { display: block; color: var(--muted); font-size: .73rem; }
 .header-actions { display: flex; align-items: center; gap: clamp(.6rem, 3vw, 1.5rem); }
