@@ -41,9 +41,12 @@ Open [`editor.html`](editor.html) via de lokale webserver of kies **Bewerk flow*
 - contacten beheren;
 - ontbrekende en onbereikbare stappen signaleren;
 - concepten lokaal in de browser bewaren;
+- lokale concepten direct in de proceswijzer doorlopen;
 - volledige flows importeren en als JSON downloaden.
 
-Plaats een gedownloade flow in [`flows/`](flows/) en voeg de titel en zoekgegevens toe aan `flowCatalog` in [`data.js`](data.js). De technische node-ID's worden door de editor gegenereerd en hoeven niet handmatig te worden beheerd.
+De editor bewaart wijzigingen automatisch als lokaal concept. De proceswijzer gebruikt dat concept op dezelfde browser en toont daarbij het label **Lokaal concept**. Met **Gebruik gepubliceerde versie** wis je het lokale concept en laad je opnieuw de versie uit GitHub.
+
+Een lokaal concept is alleen op dat apparaat en in die browser zichtbaar. Om een flow voor iedereen te publiceren, download je de JSON en vervang je het bijbehorende bestand in [`flows/`](flows/). Voeg bij een volledig nieuwe flow ook de titel en zoekgegevens toe aan `flowCatalog` in [`data.js`](data.js). De technische node-ID's worden door de editor gegenereerd en hoeven niet handmatig te worden beheerd.
 
 Een procesbestand bevat:
 
