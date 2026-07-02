@@ -13,7 +13,8 @@ const translations = {
     legend: "Legenda", startEnd: "Begin / uitkomst", action: "Actie", decision: "Beslissing", note: "Opmerking",
     share: "Deel", print: "Print", edit: "Bewerk flow", copied: "Link gekopieerd", copyEmail: "Kopieer e-mailadres",
     emailCopied: "E-mailadres gekopieerd", loading: "Proces laden…", invalidFlow: "Deze flow kon niet worden geladen.",
-    continuesAt: "Vervolg bij"
+    continuesAt: "Vervolg bij", guided: "Begeleid", overview: "Overzicht", chooseAnswer: "Kies een antwoord om verder te gaan",
+    yourRoute: "Jouw route", previousQuestion: "Vorige vraag", startAgain: "Start opnieuw"
   },
   en: {
     brandSubtitle: "Process guide", help: "Need help?", footer: "LOHC Process Guide · Together we keep the club running",
@@ -27,7 +28,8 @@ const translations = {
     legend: "Legend", startEnd: "Start / outcome", action: "Action", decision: "Decision", note: "Note",
     share: "Share", print: "Print", edit: "Edit flow", copied: "Link copied", copyEmail: "Copy email address",
     emailCopied: "Email address copied", loading: "Loading process…", invalidFlow: "This flow could not be loaded.",
-    continuesAt: "Continues at"
+    continuesAt: "Continues at", guided: "Guided", overview: "Overview", chooseAnswer: "Choose an answer to continue",
+    yourRoute: "Your route", previousQuestion: "Previous question", startAgain: "Start again"
   }
 };
 
@@ -150,6 +152,55 @@ function renderPath(nodeId, nodes, path = new Set(), stopAt = null) {
   return `<div class="graph-step">${nodeCard(node)}${node.next ? `<div class="graph-arrow" aria-hidden="true">↓</div>${renderPath(node.next, nodes, nextPath, stopAt)}` : ""}</div>`;
 }
 
+function answerStorageKey(flowId) { return `lohc-flow-answers:${flowId}`; }
+function getAnswers(flowId) {
+  try { return JSON.parse(sessionStorage.getItem(answerStorageKey(flowId))) || {}; } catch { return {}; }
+}
+function saveAnswers(flowId, answers) { sessionStorage.setItem(answerStorageKey(flowId), JSON.stringify(answers)); }
+function getViewMode(flowId) { return sessionStorage.getItem(`lohc-flow-mode:${flowId}`) || "guided"; }
+
+function guidedPath(nodeId, nodes, answers, path = new Set()) {
+  const node = nodes.get(nodeId);
+  if (!node) return `<div class="graph-error">Ontbrekende stap</div>`;
+  if (path.has(nodeId)) return `<div class="graph-reference">↪ ${t("continuesAt")}: ${escapeHtml(node[language]?.title || node.nl.title)}</div>`;
+  const nextPath = new Set(path).add(nodeId);
+  if (node.type === "decision") {
+    const selectedId = answers[node.id];
+    const selectedRoute = node.routes.find(route => route.id === selectedId);
+    return `<div class="guided-decision">${nodeCard(node)}<div class="guided-answer-label">${t("chooseAnswer")}</div>
+      <div class="guided-answers">${node.routes.map(route => `<button class="guided-answer${route.id === selectedId ? " is-selected" : ""}" type="button" data-answer-node="${escapeHtml(node.id)}" data-answer-route="${escapeHtml(route.id)}">${escapeHtml(route[language] || route.nl)}</button>`).join("")}</div>
+      ${selectedRoute ? `<div class="graph-arrow" aria-hidden="true">↓</div>${guidedPath(selectedRoute.target, nodes, answers, nextPath)}` : ""}</div>`;
+  }
+  return `<div class="graph-step">${nodeCard(node)}${node.next ? `<div class="graph-arrow" aria-hidden="true">↓</div>${guidedPath(node.next, nodes, answers, nextPath)}` : ""}</div>`;
+}
+
+function guidedHistory(entry, nodes, answers) {
+  const history = [];
+  const visited = new Set();
+  let current = entry;
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    const node = nodes.get(current);
+    if (!node) break;
+    if (node.type === "decision") {
+      const route = node.routes.find(item => item.id === answers[node.id]);
+      if (!route) break;
+      history.push({ node, route });
+      current = route.target;
+    } else current = node.next;
+  }
+  return history;
+}
+
+function guidedToolbar(flow, nodes, answers, mode) {
+  const history = guidedHistory(flow.entry, nodes, answers);
+  return `<div class="flow-view-controls"><div class="view-toggle" role="group" aria-label="Weergave">
+    <button type="button" data-view-mode="guided" class="${mode === "guided" ? "is-active" : ""}">${t("guided")}</button>
+    <button type="button" data-view-mode="overview" class="${mode === "overview" ? "is-active" : ""}">${t("overview")}</button></div>
+    ${mode === "guided" ? `<div class="route-progress"><strong>${t("yourRoute")}:</strong>${history.length ? history.map(item => `<span>${escapeHtml(item.node[language]?.title || item.node.nl.title)}: <b>${escapeHtml(item.route[language] || item.route.nl)}</b></span>`).join("") : `<span>—</span>`}</div>
+    <div class="guided-tools"><button type="button" data-guided-back ${history.length ? "" : "disabled"}>← ${t("previousQuestion")}</button><button type="button" data-guided-reset ${history.length ? "" : "disabled"}>↺ ${t("startAgain")}</button></div>` : ""}</div>`;
+}
+
 function validateFlow(flow) {
   const errors = [];
   const ids = new Set();
@@ -177,19 +228,35 @@ async function renderFlow(flowId) {
     const category = categoryFor(flow.category);
     const content = flow[language];
     const errors = validateFlow(flow);
+    const nodes = nodeMap(flow);
+    const answers = getAnswers(flow.id);
+    const mode = getViewMode(flow.id);
     document.title = `${content.title} · LOHC`;
     main.innerHTML = `<section class="content-shell flow-page"><nav class="breadcrumbs"><a href="#/">${t("home")}</a><span>›</span><a href="#" data-category-link>${escapeHtml(category[language].title)}</a><span>›</span><span>${escapeHtml(content.title)}</span></nav>
       <header class="flow-header"><div><span class="status-pill">● ${t("draft")}</span><h1>${escapeHtml(content.title)}</h1><p>${escapeHtml(content.description)}</p></div>
       <div class="flow-actions"><a class="icon-button" href="editor.html?flow=${encodeURIComponent(flow.id)}">✎ ${t("edit")}</a><button class="icon-button" id="share-button" type="button">↗ ${t("share")}</button><button class="icon-button" id="print-button" type="button">▣ ${t("print")}</button></div></header>
       <div class="meta-strip"><div class="meta-item"><small>${t("owner")}</small><strong>${escapeHtml(flow.owner[language])}</strong></div><div class="meta-item"><small>${t("reviewed")}</small><strong>${formatDate(flow.reviewed)}</strong></div><div class="meta-item"><small>${t("category")}</small><strong>${escapeHtml(category[language].title)}</strong></div></div>
       ${errors.length ? `<div class="validation-banner">${errors.map(error => `<div>⚠ ${escapeHtml(error)}</div>`).join("")}</div>` : ""}
-      <div class="flow-layout"><section class="flow-panel" aria-label="${escapeHtml(content.title)}"><div class="graph-canvas">${renderPath(flow.entry, nodeMap(flow))}</div></section>
+      ${guidedToolbar(flow, nodes, answers, mode)}
+      <div class="flow-layout"><section class="flow-panel${mode === "guided" ? " flow-panel--guided" : ""}" aria-label="${escapeHtml(content.title)}"><div class="graph-canvas${mode === "guided" ? " graph-canvas--guided" : ""}">${mode === "guided" ? guidedPath(flow.entry, nodes, answers) : renderPath(flow.entry, nodes)}</div></section>
       <aside class="flow-sidebar"><section class="sidebar-card"><h2>${t("contacts")}</h2>${flow.contacts.map(contact => `<div class="contact"><div class="contact-details"><strong>${escapeHtml(contact[language])}</strong><a href="mailto:${contact.email}">${escapeHtml(contact.email)}</a></div><button class="copy-email" type="button" data-email="${escapeHtml(contact.email)}" aria-label="${t("copyEmail")}: ${escapeHtml(contact.email)}" title="${t("copyEmail")}">▣</button></div>`).join("")}</section>
-      <section class="sidebar-card"><h2>${t("legend")}</h2><div class="legend-row"><span class="legend-shape"></span>${t("startEnd")}</div><div class="legend-row"><span class="legend-shape legend-action"></span>${t("action")}</div><div class="legend-row"><span class="legend-shape diamond"></span>${t("decision")}</div></section></aside></div></section>`;
+      <section class="sidebar-card"><h2>${t("legend")}</h2><div class="legend-row"><span class="legend-shape legend-start-end"></span>${t("startEnd")}</div><div class="legend-row"><span class="legend-shape legend-action"></span>${t("action")}</div><div class="legend-row"><span class="legend-shape diamond"></span>${t("decision")}</div></section></aside></div></section>`;
     document.querySelector("[data-category-link]").addEventListener("click", event => { event.preventDefault(); renderCategory(category.id); });
     document.querySelector("#print-button").addEventListener("click", () => window.print());
     document.querySelector("#share-button").addEventListener("click", shareCurrentPage);
     document.querySelectorAll(".copy-email").forEach(button => button.addEventListener("click", () => copyEmail(button.dataset.email)));
+    document.querySelectorAll("[data-view-mode]").forEach(button => button.addEventListener("click", () => { sessionStorage.setItem(`lohc-flow-mode:${flow.id}`, button.dataset.viewMode); renderFlow(flow.id); }));
+    document.querySelectorAll("[data-answer-node]").forEach(button => button.addEventListener("click", () => {
+      const history = guidedHistory(flow.entry, nodes, answers);
+      const changedIndex = history.findIndex(item => item.node.id === button.dataset.answerNode);
+      const keep = changedIndex >= 0 ? history.slice(0, changedIndex) : history;
+      Object.keys(answers).forEach(key => delete answers[key]);
+      keep.forEach(item => { answers[item.node.id] = item.route.id; });
+      answers[button.dataset.answerNode] = button.dataset.answerRoute;
+      saveAnswers(flow.id, answers); renderFlow(flow.id);
+    }));
+    document.querySelector("[data-guided-back]")?.addEventListener("click", () => { const history = guidedHistory(flow.entry, nodes, answers); const last = history.at(-1); if (last) { delete answers[last.node.id]; saveAnswers(flow.id, answers); renderFlow(flow.id); } });
+    document.querySelector("[data-guided-reset]")?.addEventListener("click", () => { saveAnswers(flow.id, {}); renderFlow(flow.id); });
   } catch (error) {
     console.error(error);
     main.innerHTML = `<div class="empty-state">${t("invalidFlow")}</div>`;
