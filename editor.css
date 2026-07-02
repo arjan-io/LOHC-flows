@@ -28,6 +28,9 @@
 .field label { color: #555; font-size: .72rem; font-weight: 750; }
 .field input, .field select, .field textarea { width: 100%; min-height: 40px; border: 1px solid #cfd5d8; border-radius: 8px; padding: .58rem .65rem; color: var(--charcoal); background: white; font: inherit; font-size: .84rem; }
 .field textarea { min-height: 72px; resize: vertical; }
+.category-picker { display: flex; gap: .45rem; }
+.category-picker select { flex: 1 1 auto; }
+.category-picker .button { flex: 0 0 auto; white-space: nowrap; }
 .field input:focus, .field select:focus, .field textarea:focus { outline: 2px solid #e8b8bf; border-color: var(--club-red); }
 .editor-help { margin-bottom: 1rem; padding: .75rem .85rem; border-left: 4px solid var(--club-red); border-radius: 6px; color: #5e5052; background: var(--blue-soft); font-size: .78rem; line-height: 1.5; }
 .add-menu { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .35rem; }
@@ -85,6 +88,7 @@ code { padding: .1rem .3rem; border-radius: 4px; background: #e8eaeb; }
   .editor-shell { width: min(100% - 1rem, 1500px); padding-top: 1.25rem; }
   .editor-preview-column { grid-template-columns: 1fr; }
   .form-grid, .contact-editor-row { grid-template-columns: 1fr; }
+  .category-picker { align-items: stretch; flex-direction: column; }
   .danger-zone-content { align-items: stretch; flex-direction: column; }
   .route-editor { grid-template-columns: 1fr; }
   .mini-branches { grid-template-columns: 1fr; }
