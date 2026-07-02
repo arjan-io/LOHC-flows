@@ -144,22 +144,31 @@ function render() { renderDetails(); renderNodes(); renderContacts(); bindEvents
 function nestedSet(target, path, value) { const [locale, field] = path.split("."); target[locale] ||= {}; target[locale][field] = value; }
 function nodeById(id) { return flow.nodes.find(node => node.id === id); }
 
+function refreshNodeLabels(nodeId) {
+  const node = nodeById(nodeId);
+  if (!node) return;
+  const heading = document.querySelector(`[data-node-card="${nodeId}"] .node-editor-header strong`);
+  if (heading) heading.textContent = node.nl.title || "Naamloze stap";
+  document.querySelectorAll("select option").forEach(option => {
+    if (option.value !== nodeId) return;
+    option.textContent = option.closest("#insert-after") ? `Invoegen na: ${node.nl.title || "Naamloze stap"}` : (node.nl.title || "Naamloze stap");
+  });
+}
+
 function bindEvents() {
   document.querySelectorAll(".editor-shell input, .editor-shell select, .editor-shell textarea").forEach(input => input.addEventListener("input", event => {
     const element = event.currentTarget;
     if (element.dataset.root) flow[element.dataset.root] = element.value;
     if (element.dataset.meta) nestedSet(flow, element.dataset.meta, element.value);
     if (element.dataset.owner) flow.owner[element.dataset.owner] = element.value;
-    if (element.dataset.nodeText) nestedSet(nodeById(element.dataset.node), element.dataset.nodeText, element.value);
+    if (element.dataset.nodeText) {
+      nestedSet(nodeById(element.dataset.node), element.dataset.nodeText, element.value);
+      if (element.dataset.nodeText === "nl.title") refreshNodeLabels(element.dataset.node);
+    }
     if (element.dataset.nodeField && element.dataset.nodeField !== "id") nodeById(element.dataset.node)[element.dataset.nodeField] = element.value;
     if (element.dataset.routeField) nodeById(element.dataset.node).routes[Number(element.dataset.routeIndex)][element.dataset.routeField] = element.value;
     if (element.dataset.contact) flow.contacts[Number(element.dataset.contactIndex)][element.dataset.contact] = element.value;
     setDirty(); updatePreviewAndValidation();
-  }));
-  document.querySelectorAll("[data-meta], [data-owner], [data-node-text], [data-contact]").forEach(input => input.addEventListener("blur", () => {
-    const scrollPosition = window.scrollY;
-    render();
-    window.scrollTo({ top: scrollPosition });
   }));
   document.querySelectorAll("[data-node-field='type']").forEach(select => select.addEventListener("change", event => {
     const node = nodeById(event.currentTarget.dataset.node); node.type = event.currentTarget.value;
