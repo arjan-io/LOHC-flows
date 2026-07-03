@@ -55,8 +55,12 @@ function localDraftList() {
 }
 
 function editorFlowList() {
-  const entries = new Map(flowCatalog.map(item => [item.id, { id: item.id, title: item.nl.title, local: false }]));
-  for (const draft of localDraftList()) entries.set(draft.id, { id: draft.id, title: draft.nl.title, local: true });
+  const entries = new Map(flowCatalog.map(item => [item.id, { id: item.id, title: item.nl.title, category: item.category, local: false }]));
+  for (const draft of localDraftList()) {
+    const publishedMatch = [...entries.values()].find(item => item.category === draft.category && item.title.trim().toLocaleLowerCase("nl") === draft.nl.title.trim().toLocaleLowerCase("nl"));
+    if (publishedMatch && publishedMatch.id !== draft.id) entries.delete(publishedMatch.id);
+    entries.set(draft.id, { id: draft.id, title: draft.nl.title, category: draft.category, local: true });
+  }
   return [...entries.values()].sort((a, b) => a.title.localeCompare(b.title, "nl"));
 }
 
