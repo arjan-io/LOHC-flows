@@ -4,7 +4,8 @@ export const categories = [
   { id: "vrijwilligers", icon: "♡", nl: { title: "Vrijwilligers", description: "Aanmelden, VOG en vrijwilligersfuncties." }, en: { title: "Volunteers", description: "Registration, background checks and volunteer roles." } },
   { id: "wedstrijden", icon: "⚑", nl: { title: "Wedstrijden", description: "Wedstrijdzaken, arbitrage en wedstrijdwijzigingen." }, en: { title: "Matches", description: "Match operations, refereeing and schedule changes." } },
   { id: "financien", icon: "€", nl: { title: "Financiën", description: "Contributie, declaraties en betalingen." }, en: { title: "Finance", description: "Fees, expenses and payments." } },
-  { id: "accommodatie", icon: "⌂", nl: { title: "Accommodatie", description: "Clubhuis, velden, materialen en storingen." }, en: { title: "Facilities", description: "Clubhouse, pitches, equipment and faults." } }
+  { id: "accommodatie", icon: "⌂", nl: { title: "Accommodatie", description: "Clubhuis, velden, materialen en storingen." }, en: { title: "Facilities", description: "Clubhouse, pitches, equipment and faults." } },
+  { id: "it-support", icon: "◇", nl: { title: "Support", description: "Gebruikers, toegang en ondersteuning van clubsystemen." }, en: { title: "Support", description: "Users, access and support for club systems." } }
 ];
 
 export const flowCatalog = [
@@ -22,6 +23,38 @@ export const flowCatalog = [
       title: "New registration",
       description: "Process a new registration and inform the correct people.",
       keywords: ["registration", "new member", "volunteer", "waiting list", "g-hockey", "trim hockey"]
+    }
+  },
+  {
+    id: "uitschrijving",
+    file: "flows/uitschrijving.json",
+    category: "ledenadministratie",
+    status: "draft",
+    nl: {
+      title: "Uitschrijving",
+      description: "Verwerk de uitschrijving van een lid bij LOHC.",
+      keywords: ["uitschrijven", "opzegging", "lidmaatschap", "junioren", "senioren", "trimmer"]
+    },
+    en: {
+      title: "Deregistration",
+      description: "Process a member's deregistration from LOHC.",
+      keywords: ["deregister", "cancellation", "membership", "juniors", "seniors", "trim hockey"]
+    }
+  },
+  {
+    id: "gebruikersaanvraag",
+    file: "flows/gebruikersaanvraag.json",
+    category: "it-support",
+    status: "draft",
+    nl: {
+      title: "Nieuwe gebruikersaanvraag",
+      description: "Verwerk een gebruikersaanvraag voor toegang tot Lisa.",
+      keywords: ["gebruiker", "aanvraag", "toegang", "lisa", "profiel", "autorisatie"]
+    },
+    en: {
+      title: "New user application",
+      description: "Process a user application for access to Lisa.",
+      keywords: ["user", "application", "access", "lisa", "profile", "authorization"]
     }
   }
 ];
