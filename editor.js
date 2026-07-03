@@ -1,4 +1,4 @@
-import { categories, flowCatalog } from "./data.js";
+import { categories, flowCatalog } from "./data.js?v=20260703-1";
 
 let flow;
 let dirty = false;
@@ -12,7 +12,11 @@ const customCategoryKey = "lohc-custom-categories";
 function customCategories() {
   try { return JSON.parse(localStorage.getItem(customCategoryKey)) || []; } catch { return []; }
 }
-function editorCategories() { return [...categories, ...customCategories()]; }
+function editorCategories() {
+  const merged = new Map(customCategories().map(category => [category.id, category]));
+  categories.forEach(category => merged.set(category.id, category));
+  return [...merged.values()];
+}
 
 function emptyFlow() {
   const startId = generateInternalId("node");
