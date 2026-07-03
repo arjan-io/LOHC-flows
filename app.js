@@ -78,6 +78,8 @@ function localDrafts() {
 function availableFlows() {
   const catalog = new Map(flowCatalog.map(flow => [flow.id, flow]));
   for (const flow of localDrafts()) {
+    const publishedMatch = [...catalog.values()].find(item => item.category === flow.category && item.nl.title.trim().toLocaleLowerCase("nl") === flow.nl.title.trim().toLocaleLowerCase("nl"));
+    if (publishedMatch && publishedMatch.id !== flow.id) catalog.delete(publishedMatch.id);
     catalog.set(flow.id, {
       id: flow.id, category: flow.category, _localDraft: true,
       nl: { title: flow.nl.title, description: flow.nl.description || "", keywords: flow.nl.keywords || [] },
