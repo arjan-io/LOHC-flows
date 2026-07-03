@@ -1,4 +1,4 @@
-import { categories, flowCatalog } from "./data.js?v=20260703-2";
+import { categories, flowCatalog } from "./data.js?v=20260703-3";
 
 const translations = {
   nl: {
@@ -40,6 +40,11 @@ const flowCache = new Map();
 const main = document.querySelector("main");
 const toggle = document.querySelector("#language-toggle");
 const t = key => translations[language][key];
+const legacyFlowIds = {
+  "nieuwe-inschrijving": "ledenadministratie-inschrijving",
+  "uitschrijving": "ledenadministratie-uitschrijving",
+  "gebruikersaanvraag": "support-gebruikersaanvraag"
+};
 
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
@@ -330,7 +335,7 @@ async function route() {
   if (match) {
     let flowId;
     try { flowId = decodeURIComponent(match[1]); } catch { flowId = match[1]; }
-    await renderFlow(flowId);
+    await renderFlow(legacyFlowIds[flowId] || flowId);
   } else renderHome();
   window.scrollTo({ top: 0 });
 }
