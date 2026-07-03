@@ -1,4 +1,4 @@
-import { categories, flowCatalog } from "./data.js";
+import { categories, flowCatalog } from "./data.js?v=20260703-1";
 
 const translations = {
   nl: {
@@ -56,7 +56,11 @@ const customCategoryKey = "lohc-custom-categories";
 function customCategories() {
   try { return JSON.parse(localStorage.getItem(customCategoryKey)) || []; } catch { return []; }
 }
-function allCategories() { return [...categories, ...customCategories()]; }
+function allCategories() {
+  const merged = new Map(customCategories().map(category => [category.id, category]));
+  categories.forEach(category => merged.set(category.id, category));
+  return [...merged.values()];
+}
 const categoryFor = id => allCategories().find(category => category.id === id);
 function localDrafts() {
   const drafts = [];
