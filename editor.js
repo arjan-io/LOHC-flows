@@ -8,6 +8,7 @@ const $ = selector => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const nodeTypes = { start: "Start", action: "Actie", decision: "Vraag", note: "Opmerking", end: "Uitkomst" };
 const customCategoryKey = "lohc-custom-categories";
+const validTechnicalId = value => /^[a-z0-9-]+$/.test(value);
 
 function customCategories() {
   try { return JSON.parse(localStorage.getItem(customCategoryKey)) || []; } catch { return []; }
@@ -115,7 +116,7 @@ function options(selected, includeNone = true) {
 function renderDetails() {
   $("#flow-details").innerHTML = `<div class="editor-card-heading"><div><p class="section-kicker">Algemeen</p><h2>Flowgegevens</h2></div></div>
     <div class="form-grid">
-      <div class="field"><label>Technisch ID</label><input data-root="id" value="${escapeHtml(flow.id)}"></div>
+      <div class="field"><label>Technisch ID</label><input data-root="id" value="${escapeHtml(flow.id)}" aria-describedby="flow-id-hint"><small class="field-hint" id="flow-id-hint">Alleen kleine letters, cijfers en koppeltekens; bijvoorbeeld <code>nieuwe-inschrijving</code>.</small></div>
       <div class="field"><label>Categorie</label><div class="category-picker"><select data-root="category">${editorCategories().map(category => `<option value="${category.id}"${category.id === flow.category ? " selected" : ""}>${escapeHtml(category.nl.title)}</option>`).join("")}</select><button class="button button--quiet" id="add-category" type="button">+ Nieuwe categorie</button></div></div>
       <div class="field"><label>Titel Nederlands</label><input data-meta="nl.title" value="${escapeHtml(flow.nl.title)}"></div>
       <div class="field"><label>Titel Engels</label><input data-meta="en.title" value="${escapeHtml(flow.en.title)}"></div>
@@ -173,6 +174,7 @@ function renderDangerZone() {
 function validate() {
   const errors = [];
   const ids = new Set();
+  if (!validTechnicalId(flow.id)) errors.push("Het technische flow-ID mag alleen kleine letters, cijfers en koppeltekens bevatten. Gebruik geen spaties of hoofdletters.");
   for (const node of flow.nodes) {
     if (!/^[a-z0-9-]+$/.test(node.id)) errors.push(`“${node.nl?.title || "Naamloze stap"}” heeft intern een ongeldig kenmerk.`);
     if (ids.has(node.id)) errors.push(`“${node.nl?.title || "Naamloze stap"}” heeft intern een dubbel kenmerk.`);
@@ -218,6 +220,8 @@ function miniPath(id, path = new Set(), stopAt = null) {
 
 function updatePreviewAndValidation() {
   const errors = validate();
+  const flowIdInput = document.querySelector('[data-root="id"]');
+  if (flowIdInput) flowIdInput.setAttribute("aria-invalid", String(!validTechnicalId(flow.id)));
   $("#validation-count").textContent = errors.length;
   $("#validation-results").innerHTML = errors.length ? `<ul class="validation-list">${errors.map(error => `<li>${escapeHtml(error)}</li>`).join("")}</ul>` : `<div class="validation-ok">✓ Flow is compleet en verbonden.</div>`;
   const reachable = new Set();
@@ -349,7 +353,21 @@ function deleteNode(id) {
 
 function showToast(message) { const toast = $("#toast"); toast.textContent = message; toast.classList.add("is-visible"); setTimeout(() => toast.classList.remove("is-visible"), 1800); }
 $("#save-draft").addEventListener("click", () => saveLocalDraft(false));
-$("#download-flow").addEventListener("click", () => { const blob = new Blob([`${JSON.stringify(flow, null, 2)}\n`], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `${flow.id}.json`; link.click(); URL.revokeObjectURL(url); showToast("JSON gedownload"); });
+$("#download-flow").addEventListener("click", () => {
+  if (!validTechnicalId(flow.id)) {
+    document.querySelector('[data-root="id"]')?.focus();
+    showToast("Corrigeer eerst het technische ID: geen spaties of hoofdletters");
+    return;
+  }
+  const blob = new Blob([`${JSON.stringify(flow, null, 2)}\n`], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${flow.id}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast("JSON gedownload");
+});
 $("#new-flow").addEventListener("click", () => { if (dirty) saveLocalDraft(true); flow = emptyFlow(); loadedFlowId = null; history.replaceState(null, "", "editor.html"); setDirty(); render(); });
 $("#import-flow").addEventListener("change", async event => { try { flow = JSON.parse(await event.target.files[0].text()); setDirty(); render(); showToast("Flow geïmporteerd"); } catch { showToast("Dit is geen geldige JSON-flow"); } event.target.value = ""; });
 window.addEventListener("beforeunload", event => { if (!dirty) return; event.preventDefault(); event.returnValue = ""; });
