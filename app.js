@@ -101,7 +101,7 @@ function categoryCard(category) {
 
 function flowCard(flow) {
   const category = categoryFor(flow.category);
-  return `<button class="category-card" type="button" data-flow="${flow.id}"><span class="category-icon" aria-hidden="true">→</span>
+  return `<button class="category-card" type="button" data-flow="${escapeHtml(flow.id)}"><span class="category-icon" aria-hidden="true">→</span>
     <h3>${escapeHtml(flow[language].title)}</h3><p>${escapeHtml(flow[language].description)}</p>
     <span class="category-meta">${escapeHtml(category[language].title)} →</span></button>`;
 }
@@ -109,7 +109,7 @@ function flowCard(flow) {
 function bindCards() {
   document.querySelectorAll("[data-flow]").forEach(button => button.addEventListener("click", () => {
     sessionStorage.removeItem(answerStorageKey(button.dataset.flow));
-    navigate(`/flow/${button.dataset.flow}`);
+    navigate(`/flow/${encodeURIComponent(button.dataset.flow)}`);
   }));
   document.querySelectorAll("[data-category]").forEach(button => button.addEventListener("click", () => renderCategory(button.dataset.category)));
   document.querySelectorAll("[data-home-link]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); renderHome(); window.scrollTo({ top: 0 }); }));
@@ -327,7 +327,11 @@ function navigate(path) { location.hash = `#${path}`; }
 async function route() {
   updateChrome(); document.title = "LOHC Proceswijzer";
   const match = location.hash.match(/^#\/flow\/(.+)$/);
-  if (match) await renderFlow(match[1]); else renderHome();
+  if (match) {
+    let flowId;
+    try { flowId = decodeURIComponent(match[1]); } catch { flowId = match[1]; }
+    await renderFlow(flowId);
+  } else renderHome();
   window.scrollTo({ top: 0 });
 }
 
