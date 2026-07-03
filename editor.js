@@ -1,4 +1,4 @@
-import { categories, flowCatalog } from "./data.js?v=20260703-1";
+import { categories, flowCatalog } from "./data.js?v=20260703-2";
 
 let flow;
 let dirty = false;
