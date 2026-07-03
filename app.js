@@ -1,4 +1,4 @@
-import { categories, flowCatalog } from "./data.js?v=20260703-1";
+import { categories, flowCatalog } from "./data.js?v=20260703-2";
 
 const translations = {
   nl: {
@@ -123,7 +123,7 @@ function renderHome(searchTerm = "") {
     <p class="hero-copy">${t("heroCopy")}</p><label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span>
     <input class="search-input" id="flow-search" type="search" value="${escapeHtml(searchTerm)}" placeholder="${t("searchPlaceholder")}" aria-label="${t("searchPlaceholder")}" autocomplete="off"></label></div></section>
     <section class="content-shell"><div class="section-heading"><div><h2>${term ? t("results")(matches.length) : t("categories")}</h2><p>${term ? t("searchPlaceholder") : t("categoriesCopy")}</p></div></div>
-    <div class="category-grid">${term ? (matches.map(flowCard).join("") || `<div class="empty-state">${t("noResults")}</div>`) : allCategories().map(categoryCard).join("")}</div></section>`;
+    <div class="category-grid">${term ? (matches.map(flowCard).join("") || `<div class="empty-state">${t("noResults")}</div>`) : allCategories().filter(category => flowCount(category.id) > 0).map(categoryCard).join("")}</div></section>`;
   const input = document.querySelector("#flow-search");
   input.addEventListener("input", event => renderHome(event.target.value));
   if (term) { input.focus({ preventScroll: true }); input.setSelectionRange(input.value.length, input.value.length); }
