@@ -5,8 +5,8 @@ export const categories = [
 
 export const flowCatalog = [
   {
-    id: "nieuwe-inschrijving",
-    file: "flows/nieuwe-inschrijving.json",
+    id: "ledenadministratie-inschrijving",
+    file: "flows/ledenadministratie-inschrijving.json",
     category: "ledenadministratie",
     status: "draft",
     nl: {
@@ -21,8 +21,8 @@ export const flowCatalog = [
     }
   },
   {
-    id: "uitschrijving",
-    file: "flows/uitschrijving.json",
+    id: "ledenadministratie-uitschrijving",
+    file: "flows/ledenadministratie-uitschrijving.json",
     category: "ledenadministratie",
     status: "draft",
     nl: {
@@ -37,8 +37,8 @@ export const flowCatalog = [
     }
   },
   {
-    id: "gebruikersaanvraag",
-    file: "flows/gebruikersaanvraag.json",
+    id: "support-gebruikersaanvraag",
+    file: "flows/support-gebruikersaanvraag.json",
     category: "it-support",
     status: "draft",
     nl: {
