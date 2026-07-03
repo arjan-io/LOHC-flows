@@ -28,15 +28,15 @@
   ],
   "nodes": [
     { "id": "start", "type": "start", "nl": { "title": "Nieuwe inschrijving" }, "en": { "title": "New registration" }, "next": "same-person" },
-    { "id": "same-person", "type": "decision", "nl": { "title": "Zelfde persoon?" }, "en": { "title": "Existing person?" }, "routes": [
+    { "id": "same-person", "type": "decision", "nl": { "title": "Knop \"Zelfde persoon\" zichtbaar?", "detail": "" }, "en": { "title": "Button \"Existing person\" visible?", "detail": "" }, "routes": [
       { "id": "yes", "nl": "Ja", "en": "Yes", "target": "merge-person" },
       { "id": "no", "nl": "Nee", "en": "No", "target": "billing-address" }
     ] },
     { "id": "merge-person", "type": "action", "nl": { "title": "Persoon samenvoegen" }, "en": { "title": "Merge person records" }, "next": "billing-address" },
-    { "id": "billing-address", "type": "action", "nl": { "title": "Persoon bewerken", "detail": "Vink ‘Factuuradres’ aan." }, "en": { "title": "Edit person", "detail": "Select ‘Billing address’." }, "next": "volunteer" },
+    { "id": "billing-address", "type": "action", "nl": { "title": "Persoon bewerken", "detail": "" }, "en": { "title": "Edit person", "detail": "" }, "next": "volunteer" },
     { "id": "volunteer", "type": "decision", "nl": { "title": "Vrijwilliger?" }, "en": { "title": "Volunteer?" }, "routes": [
       { "id": "yes", "nl": "Ja", "en": "Yes", "target": "confirm-volunteer" },
-      { "id": "no", "nl": "Nee", "en": "No", "target": "trim-or-g" }
+      { "id": "no", "nl": "Nee", "en": "No", "target": "node-0e3445d9-c71b-4f53-8e06-d6984b655f13" }
     ] },
     { "id": "confirm-volunteer", "type": "action", "nl": { "title": "Bevestigen", "detail": "Klik op ‘Bevestigen’ in de ledenadministratie." }, "en": { "title": "Confirm", "detail": "Click ‘Confirm’ in membership administration." }, "next": "mail-vog" },
     { "id": "mail-vog", "type": "action", "nl": { "title": "VOG-functionaris mailen", "detail": "vog@lohc.nl" }, "en": { "title": "Email screening officer", "detail": "vog@lohc.nl" }, "next": "volunteer-complete" },
@@ -60,6 +60,7 @@
     { "id": "trim-complete", "type": "end", "nl": { "title": "Triminschrijving afgerond" }, "en": { "title": "Trim-hockey registration completed" } },
     { "id": "create-noor-campaign", "type": "action", "nl": { "title": "Noor-campagne aanmaken" }, "en": { "title": "Create Noor campaign" }, "next": "mail-g-hockey" },
     { "id": "mail-g-hockey", "type": "action", "nl": { "title": "G-hockey mailen", "detail": "g-hockey@lohc.nl" }, "en": { "title": "Email G-hockey", "detail": "g-hockey@lohc.nl" }, "next": "g-hockey-complete" },
-    { "id": "g-hockey-complete", "type": "end", "nl": { "title": "G-hockeyinschrijving afgerond" }, "en": { "title": "G-hockey registration completed" } }
+    { "id": "g-hockey-complete", "type": "end", "nl": { "title": "G-hockeyinschrijving afgerond" }, "en": { "title": "G-hockey registration completed" } },
+    { "id": "node-0e3445d9-c71b-4f53-8e06-d6984b655f13", "type": "action", "nl": { "title": "Selecteer mailadres voor facturatie" }, "en": { "title": "Select e-mail address for billing" }, "next": "trim-or-g" }
   ]
 }
