@@ -28,6 +28,8 @@
 .field label { color: #555; font-size: .72rem; font-weight: 750; }
 .field input, .field select, .field textarea { width: 100%; min-height: 40px; border: 1px solid #cfd5d8; border-radius: 8px; padding: .58rem .65rem; color: var(--charcoal); background: white; font: inherit; font-size: .84rem; }
 .field textarea { min-height: 72px; resize: vertical; }
+.field-hint { color: #6d7478; font-size: .66rem; line-height: 1.4; }
+.field input[aria-invalid="true"] { border-color: #a32638; background: #fff4f5; box-shadow: 0 0 0 2px rgb(163 38 56 / 14%); }
 .category-picker { display: flex; gap: .45rem; }
 .category-picker select { flex: 1 1 auto; }
 .category-picker .button { flex: 0 0 auto; white-space: nowrap; }
