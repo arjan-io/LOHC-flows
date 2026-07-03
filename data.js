@@ -1,11 +1,6 @@
 export const categories = [
   { id: "ledenadministratie", icon: "♙", nl: { title: "Ledenadministratie", description: "Inschrijven, uitschrijven en wijzigingen van leden." }, en: { title: "Membership", description: "Registrations, cancellations and member changes." } },
-  { id: "teams", icon: "♟", nl: { title: "Teams & indeling", description: "Teamindeling, invallers en begeleiding." }, en: { title: "Teams & allocation", description: "Team allocation, substitutes and supervision." } },
-  { id: "vrijwilligers", icon: "♡", nl: { title: "Vrijwilligers", description: "Aanmelden, VOG en vrijwilligersfuncties." }, en: { title: "Volunteers", description: "Registration, background checks and volunteer roles." } },
-  { id: "wedstrijden", icon: "⚑", nl: { title: "Wedstrijden", description: "Wedstrijdzaken, arbitrage en wedstrijdwijzigingen." }, en: { title: "Matches", description: "Match operations, refereeing and schedule changes." } },
-  { id: "financien", icon: "€", nl: { title: "Financiën", description: "Contributie, declaraties en betalingen." }, en: { title: "Finance", description: "Fees, expenses and payments." } },
-  { id: "accommodatie", icon: "⌂", nl: { title: "Accommodatie", description: "Clubhuis, velden, materialen en storingen." }, en: { title: "Facilities", description: "Clubhouse, pitches, equipment and faults." } },
-  { id: "it-support", icon: "◇", nl: { title: "Support", description: "Gebruikers, toegang en ondersteuning van clubsystemen." }, en: { title: "Support", description: "Users, access and support for club systems." } }
+  { id: "it-support", icon: "◇", nl: { title: "IT Support", description: "Gebruikers, toegang en ondersteuning van clubsystemen." }, en: { title: "IT Support", description: "Users, access and support for club systems." } }
 ];
 
 export const flowCatalog = [
