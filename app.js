@@ -3,6 +3,7 @@ import { categories as bundledCategories, flowCatalog as bundledFlowCatalog } fr
 const translations = {
   nl: {
     brandSubtitle: "Proceswijzer", help: "Hulp nodig?", footer: "LOHC Proceswijzer · Samen houden we de club draaiend",
+    disclaimer: "Alle flows zijn bedoeld als praktische referentie. Ze zijn niet gegarandeerd volledig of juist: onderhouden door leden, voor leden — dus zo goed als we ze samen maken.",
     eyebrow: "Kennisbank voor de club", heroTitle: "Wat wil je <span>regelen?</span>",
     heroCopy: "Vind snel de juiste stappen, contactpersonen en afspraken voor iedere situatie binnen LOHC.",
     searchPlaceholder: "Zoek bijvoorbeeld ‘nieuw lid’, ‘VOG’ of ‘wedstrijd’…", categories: "Kies een categorie",
@@ -19,6 +20,7 @@ const translations = {
   },
   en: {
     brandSubtitle: "Process guide", help: "Need help?", footer: "LOHC Process Guide · Together we keep the club running",
+    disclaimer: "All flows are intended as a practical reference. They are not guaranteed to be complete or correct: maintained by members, for members — so they are only as good as we make them together.",
     eyebrow: "The club knowledge base", heroTitle: "What do you want to <span>arrange?</span>",
     heroCopy: "Quickly find the right steps, contacts and agreements for every situation within LOHC.",
     searchPlaceholder: "Try ‘new member’, ‘volunteer’ or ‘match’…", categories: "Choose a category",
