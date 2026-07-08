@@ -80,9 +80,50 @@ function catalogEntryFromFlow(flow) {
   };
 }
 
+function normalizeCategoryIcons(categories) {
+  const bundledById = new Map(bundledCategories.map(category => [category.id, category]));
+  const used = new Set();
+  let changed = false;
+  const normalizedCategories = categories.map(category => {
+    const nextCategory = { ...category };
+    const bundled = bundledById.get(category.id);
+    const icon = String(category.icon || "");
+    if (bundled?.icon && (!icon || icon === "♙" || icon === "◇")) {
+      nextCategory.icon = bundled.icon;
+      changed = true;
+    }
+    if (!nextCategory.icon || used.has(String(nextCategory.icon).toUpperCase())) {
+      nextCategory.icon = uniqueCategoryIcon(nextCategory.nl?.title || nextCategory.id, used);
+      changed = true;
+    }
+    used.add(String(nextCategory.icon).toUpperCase());
+    return nextCategory;
+  });
+  return { changed, categories: normalizedCategories };
+}
+
+function uniqueCategoryIcon(title, used) {
+  const normalized = String(title).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const words = normalized.toUpperCase().match(/[A-Z0-9]+/g) || [];
+  const compact = words.join("");
+  const candidates = [];
+  if (words.length >= 2) candidates.push(`${words[0][0]}${words[1][0]}`);
+  if (words[0]?.length >= 2) candidates.push(words[0].slice(0, 2));
+  for (let size = 2; size <= 3; size += 1) if (compact.length >= size) candidates.push(compact.slice(0, size));
+  candidates.push("CT");
+  for (const candidate of candidates) if (!used.has(candidate)) return candidate;
+  let suffix = 2;
+  while (used.has(`C${suffix}`)) suffix += 1;
+  return `C${suffix}`;
+}
+
 async function seedDataStore() {
   await fs.mkdir(flowsDir, { recursive: true });
   if (!(await exists(categoriesPath))) await writeJson(categoriesPath, bundledCategories);
+  else {
+    const normalized = normalizeCategoryIcons(await readJson(categoriesPath));
+    if (normalized.changed) await writeJson(categoriesPath, normalized.categories);
+  }
 
   if (await exists(seedMarkerPath)) return;
   for (const item of bundledCatalog) {
@@ -220,6 +261,4 @@ app.use((error, _req, res, _next) => {
 });
 
 await seedDataStore();
-app.listen(port, "0.0.0.0", () => {
-  console.log(`LOHC Proceswijzer running on port ${port}, using data directory ${dataDir}`);
-});
+app.listen(port, "0.0.0.0", () => console.log(`LOHC flows listening on ${port}`));
