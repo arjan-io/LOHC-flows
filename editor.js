@@ -1,4 +1,4 @@
-import { categories as bundledCategories, flowCatalog as bundledFlowCatalog } from "./data.js?v=20260708-1";
+import { categories as bundledCategories, flowCatalog as bundledFlowCatalog } from "./data.js?v=20260708-2";
 
 let flow;
 let dirty = false;
@@ -43,11 +43,11 @@ function editorCategories() {
   return [...merged.values()];
 }
 
-function emptyFlow() {
+function emptyFlow(category = "ledenadministratie") {
   const startId = generateInternalId("node");
   const endId = generateInternalId("node");
   return {
-    $schema: "./flow.schema.json", schemaVersion: 1, id: "nieuwe-flow", category: "ledenadministratie", status: "draft", entry: startId,
+    $schema: "./flow.schema.json", schemaVersion: 1, id: "nieuwe-flow", category, status: "draft", entry: startId,
     owner: { nl: "", en: "" }, reviewed: new Date().toISOString().slice(0, 10),
     nl: { title: "Nieuwe flow", description: "" }, en: { title: "New flow", description: "" }, contacts: [],
     nodes: [{ id: startId, type: "start", nl: { title: "Start" }, en: { title: "Start" }, next: endId }, { id: endId, type: "end", nl: { title: "Proces afgerond" }, en: { title: "Process completed" } }]
@@ -57,13 +57,15 @@ function emptyFlow() {
 async function initialize() {
   await loadCatalog();
   updateServerModeCopy();
-  const flowId = new URLSearchParams(location.search).get("flow");
+  const parameters = new URLSearchParams(location.search);
+  const flowId = parameters.get("flow");
+  const requestedCategory = parameters.get("category");
   const saved = !serverBacked && flowId && localStorage.getItem(`lohc-flow-draft:${flowId}`);
   if (saved) flow = JSON.parse(saved);
   else if (flowId) {
     const item = flowCatalog.find(entry => entry.id === flowId);
     flow = item ? await fetch(item.file).then(response => response.json()) : emptyFlow();
-  } else flow = emptyFlow();
+  } else flow = emptyFlow(editorCategories().some(category => category.id === requestedCategory) ? requestedCategory : "ledenadministratie");
   loadedFlowId = flow.id;
   render();
 }
@@ -118,6 +120,22 @@ function renderFlowSelector() {
   const entries = editorFlowList();
   if (!entries.some(item => item.id === flow.id)) entries.push({ id: flow.id, title: flow.nl.title, local: true });
   selector.innerHTML = entries.map(item => `<option value="${escapeHtml(item.id)}"${item.id === flow.id ? " selected" : ""}>${escapeHtml(item.title)}${item.local ? " · lokaal" : ""}</option>`).join("");
+}
+
+function suggestedCategoryIcon(title) {
+  const used = new Set(editorCategories().map(category => String(category.icon || "").toUpperCase()));
+  const normalized = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const words = normalized.toUpperCase().match(/[A-Z0-9]+/g) || [];
+  const candidates = [];
+  if (words.length >= 2) candidates.push(`${words[0][0]}${words[1][0]}`);
+  if (words[0]?.length >= 2) candidates.push(words[0].slice(0, 2));
+  const compact = words.join("");
+  for (let size = 2; size <= 3; size += 1) if (compact.length >= size) candidates.push(compact.slice(0, size));
+  candidates.push("CT");
+  for (const candidate of candidates) if (!used.has(candidate)) return candidate;
+  let suffix = 2;
+  while (used.has(`C${suffix}`)) suffix += 1;
+  return `C${suffix}`;
 }
 
 async function openFlow(flowId) {
@@ -378,7 +396,7 @@ async function addCategory() {
   let suffix = 2;
   while (usedIds.has(id)) id = `${baseId}-${suffix++}`;
   const category = {
-    id, icon: "◇",
+    id, icon: suggestedCategoryIcon(nlTitle),
     nl: { title: nlTitle, description: "Eigen categorie." },
     en: { title: enTitle, description: "Custom category." }
   };
