@@ -1,4 +1,4 @@
-import { categories, flowCatalog } from "./data.js?v=20260703-3";
+import { categories as bundledCategories, flowCatalog as bundledFlowCatalog } from "./data.js?v=20260708-1";
 
 const translations = {
   nl: {
@@ -40,6 +40,10 @@ const flowCache = new Map();
 const main = document.querySelector("main");
 const toggle = document.querySelector("#language-toggle");
 const t = key => translations[language][key];
+let categories = bundledCategories;
+let flowCatalog = bundledFlowCatalog;
+let serverBacked = false;
+let catalogReady;
 const legacyFlowIds = {
   "nieuwe-inschrijving": "ledenadministratie-inschrijving",
   "uitschrijving": "ledenadministratie-uitschrijving",
@@ -57,8 +61,24 @@ function updateChrome() {
   toggle.setAttribute("aria-label", language === "nl" ? "Switch to English" : "Wissel naar Nederlands");
 }
 
+async function loadCatalog() {
+  try {
+    const response = await fetch("/api/catalog", { cache: "no-store" });
+    if (!response.ok) throw new Error("No server catalog");
+    const data = await response.json();
+    categories = data.categories || bundledCategories;
+    flowCatalog = data.flowCatalog || bundledFlowCatalog;
+    serverBacked = Boolean(data.serverBacked);
+  } catch {
+    categories = bundledCategories;
+    flowCatalog = bundledFlowCatalog;
+    serverBacked = false;
+  }
+}
+
 const customCategoryKey = "lohc-custom-categories";
 function customCategories() {
+  if (serverBacked) return [];
   try { return JSON.parse(localStorage.getItem(customCategoryKey)) || []; } catch { return []; }
 }
 function allCategories() {
@@ -68,6 +88,7 @@ function allCategories() {
 }
 const categoryFor = id => allCategories().find(category => category.id === id);
 function localDrafts() {
+  if (serverBacked) return [];
   const drafts = [];
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index);
@@ -146,8 +167,8 @@ function renderCategory(categoryId) {
 
 async function loadFlow(id) {
   if (flowCache.has(id)) return flowCache.get(id);
-  const localDraft = localStorage.getItem(`lohc-flow-draft:${id}`);
-  if (localDraft) {
+  const localDraft = serverBacked ? null : localStorage.getItem(`lohc-flow-draft:${id}`);
+  if (!serverBacked && localDraft) {
     const flow = JSON.parse(localDraft);
     flow._localDraft = true;
     flowCache.set(id, flow);
@@ -289,7 +310,7 @@ async function renderFlow(flowId) {
     document.title = `${content.title} · LOHC`;
     main.innerHTML = `<section class="content-shell flow-page"><nav class="breadcrumbs"><a href="#/">${t("home")}</a><span>›</span><a href="#" data-category-link>${escapeHtml(category[language].title)}</a><span>›</span><span>${escapeHtml(content.title)}</span></nav>
       <header class="flow-header"><div><span class="status-pill${flow._localDraft ? " status-pill--local" : ""}">● ${flow._localDraft ? t("localDraft") : t("draft")}</span><h1>${escapeHtml(content.title)}</h1><p>${escapeHtml(content.description)}</p></div>
-      <div class="flow-actions"><a class="icon-button" href="editor.html?flow=${encodeURIComponent(flow.id)}">✎ ${t("edit")}</a>${flow._localDraft ? `<button class="icon-button" id="clear-draft" type="button">↺ ${t("usePublished")}</button>` : ""}<button class="icon-button" id="share-button" type="button">↗ ${t("share")}</button><button class="icon-button" id="print-button" type="button">▣ ${t("print")}</button></div></header>
+    <div class="flow-actions"><a class="icon-button" href="editor.html?flow=${encodeURIComponent(flow.id)}">✎ ${t("edit")}</a>${!serverBacked && flow._localDraft ? `<button class="icon-button" id="clear-draft" type="button">↺ ${t("usePublished")}</button>` : ""}<button class="icon-button" id="share-button" type="button">↗ ${t("share")}</button><button class="icon-button" id="print-button" type="button">▣ ${t("print")}</button></div></header>
       <div class="meta-strip"><div class="meta-item"><small>${t("owner")}</small><strong>${escapeHtml(flow.owner[language])}</strong></div><div class="meta-item"><small>${t("reviewed")}</small><strong>${formatDate(flow.reviewed)}</strong></div><div class="meta-item"><small>${t("category")}</small><strong>${escapeHtml(category[language].title)}</strong></div></div>
       ${errors.length ? `<div class="validation-banner">${errors.map(error => `<div>⚠ ${escapeHtml(error)}</div>`).join("")}</div>` : ""}
       ${guidedToolbar(flow, nodes, answers, mode)}
@@ -330,6 +351,8 @@ async function shareCurrentPage() {
 }
 function navigate(path) { location.hash = `#${path}`; }
 async function route() {
+  catalogReady ||= loadCatalog();
+  await catalogReady;
   updateChrome(); document.title = "LOHC Proceswijzer";
   const match = location.hash.match(/^#\/flow\/(.+)$/);
   if (match) {
