@@ -18,17 +18,26 @@ De eerste voorbeeldflow is **Ledenadministratie → Nieuwe inschrijving**.
 - Visuele editor met live voorbeeld en validatie
 - JSON-import en -export voor processen
 - Print- en deelfunctie
-- Geen database, account of betaalde dienst nodig
+- Serveropslag via Docker, met statische fallback voor GitHub Pages
 
 ## Lokaal bekijken
 
-Omdat de website JavaScript-modules gebruikt, moet hij via een kleine lokale webserver worden geopend. Bijvoorbeeld met Python:
+Statische fallback, bijvoorbeeld voor GitHub Pages of snel lokaal bekijken:
 
 ```sh
 python3 -m http.server 8080
 ```
 
 Open daarna <http://localhost:8080>.
+
+Servermodus, met gedeelde opslag van flows:
+
+```sh
+npm install
+DATA_DIR=./data PORT=8080 LOHC_ADMIN_TOKEN=kies-een-code npm start
+```
+
+Open daarna <http://localhost:8080>. In servermodus worden flows en categorieën opgeslagen in `DATA_DIR`. Als `LOHC_ADMIN_TOKEN` is ingesteld, vraagt de editor bij opslaan/verwijderen een beheerderscode.
 
 ## Processen maken en bewerken
 
@@ -40,13 +49,13 @@ Open [`editor.html`](editor.html) via de lokale webserver of kies **Bewerk flow*
 - Nederlandse en Engelse teksten beheren;
 - contacten beheren;
 - ontbrekende en onbereikbare stappen signaleren;
-- concepten lokaal in de browser bewaren;
-- lokale concepten direct in de proceswijzer doorlopen;
+- concepten lokaal in de browser bewaren wanneer de app statisch draait;
+- flows direct op de server opslaan wanneer de app via Docker/Node draait;
 - volledige flows importeren en als JSON downloaden.
 
-De editor bewaart wijzigingen automatisch als lokaal concept. De proceswijzer gebruikt dat concept op dezelfde browser en toont daarbij het label **Lokaal concept**. Met **Gebruik gepubliceerde versie** wis je het lokale concept en laad je opnieuw de versie uit GitHub.
+Wanneer de app via de Node/Docker-server draait, bewaart de editor wijzigingen automatisch op de server. Nieuwe flows, aangepaste flows en nieuwe categorieën worden dan gedeeld met iedereen die dezelfde server gebruikt.
 
-Een lokaal concept is alleen op dat apparaat en in die browser zichtbaar. Om een flow voor iedereen te publiceren, download je de JSON en vervang je het bijbehorende bestand in [`flows/`](flows/). Voeg bij een volledig nieuwe flow ook de titel en zoekgegevens toe aan `flowCatalog` in [`data.js`](data.js). De technische node-ID's worden door de editor gegenereerd en hoeven niet handmatig te worden beheerd.
+Wanneer de app statisch draait, bijvoorbeeld via GitHub Pages, bewaart de editor wijzigingen als lokaal concept in de browser. Een lokaal concept is alleen op dat apparaat en in die browser zichtbaar. Om een flow dan voor iedereen te publiceren, download je de JSON en vervang je het bijbehorende bestand in [`flows/`](flows/). Voeg bij een volledig nieuwe flow ook de titel en zoekgegevens toe aan `flowCatalog` in [`data.js`](data.js). De technische node-ID's worden door de editor gegenereerd en hoeven niet handmatig te worden beheerd.
 
 Een procesbestand bevat:
 
@@ -70,7 +79,47 @@ Iedere actie wijst met `next` naar een volgende stap. Een vraag bevat routes die
 
 ## Publiceren
 
-De app is volledig statisch en kan onder meer op GitHub Pages, Netlify of de bestaande website van de club worden gepubliceerd. De meegeleverde GitHub Actions-workflow publiceert iedere wijziging op `main` automatisch naar GitHub Pages; er is geen bouwstap nodig.
+De app kan nog steeds statisch op GitHub Pages draaien. Voor gedeelde serveropslag gebruik je de Node/Docker-server.
+
+## Draaien met Docker / DigitalOcean
+
+Voor DigitalOcean is de site verpakt als kleine Node-container. Bij de eerste start worden de meegeleverde JSON-flows naar de datamap gekopieerd. Daarna gebruikt de app de datamap als bron van waarheid.
+
+Alleen de LOHC Proceswijzer starten:
+
+```sh
+docker build -t lohc-flows .
+docker run --rm -p 8080:8080 -v "$PWD/data:/data" -e LOHC_ADMIN_TOKEN=kies-een-code lohc-flows
+```
+
+Open daarna:
+
+```text
+http://localhost:8080
+```
+
+Samen met het project **Pay and statistics calculator** starten kan met:
+
+```sh
+docker compose -f docker-compose.oracle.yml up -d --build
+```
+
+Daarbij worden de apps zo gepubliceerd:
+
+| App | Lokale poort |
+| --- | --- |
+| LOHC Proceswijzer | <http://localhost:8080> |
+| Pay and statistics calculator | <http://localhost:8081> |
+
+De compose-file verwacht dat beide projecten naast elkaar staan:
+
+```text
+Documents/
+├── LOHC flows/
+└── Pay and statistics calculator/
+```
+
+Op een DigitalOcean-droplet moet je in de firewall poort `8080` en `8081` toestaan, of een reverse proxy zoals nginx/Caddy gebruiken om beide apps achter één domein te zetten.
 
 ## Status
 
