@@ -1,6 +1,6 @@
 export const categories = [
-  { id: "ledenadministratie", icon: "♙", nl: { title: "Ledenadministratie", description: "Inschrijven, uitschrijven en wijzigingen van leden." }, en: { title: "Membership", description: "Registrations, cancellations and member changes." } },
-  { id: "it-support", icon: "◇", nl: { title: "IT Support", description: "Gebruikers, toegang en ondersteuning van clubsystemen." }, en: { title: "IT Support", description: "Users, access and support for club systems." } }
+  { id: "ledenadministratie", icon: "LA", nl: { title: "Ledenadministratie", description: "Inschrijven, uitschrijven en wijzigingen van leden." }, en: { title: "Membership", description: "Registrations, cancellations and member changes." } },
+  { id: "it-support", icon: "IT", nl: { title: "IT Support", description: "Gebruikers, toegang en ondersteuning van clubsystemen." }, en: { title: "IT Support", description: "Users, access and support for club systems." } }
 ];
 
 export const flowCatalog = [
