@@ -103,9 +103,24 @@ a { color: inherit; }
 }
 .category-card:hover, .category-card:focus-visible { transform: translateY(-4px); box-shadow: var(--shadow); border-color: #b8c5cb; border-left: 4px solid var(--club-red); outline: none; }
 .category-icon { display: grid; place-items: center; width: 45px; height: 45px; border-radius: 12px; margin-bottom: 1.2rem; background: #edf1f3; color: var(--club-red); font-size: .92rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
-.category-icon--plus { font-size: 1.8rem; line-height: 1; }
+.category-icon--plus { position: relative; overflow: hidden; font-size: 0; line-height: 1; }
+.category-icon--plus::before,
+.category-icon--plus::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 23px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--blue);
+  translate: -50% -50%;
+}
+.category-icon--plus::after { rotate: 90deg; }
 .category-card--new { border-style: dashed; text-decoration: none; background: linear-gradient(180deg, #fff, #fbf4f5); }
-.category-card--new .category-icon { color: white; background: var(--club-red); }
+.category-card--new .category-icon { color: var(--blue); background: #edf1f3; }
+.category-card--new:hover .category-icon,
+.category-card--new:focus-visible .category-icon { background: var(--blue-soft); }
 .category-card h3 { margin: 0; color: var(--navy); font-size: 1.05rem; }
 .category-card p { margin: .55rem 0 1rem; color: var(--muted); line-height: 1.5; font-size: .86rem; }
 .category-meta { margin-top: auto; color: var(--blue); font-size: .78rem; font-weight: 800; }
