@@ -1,16 +1,40 @@
-import { categories, flowCatalog } from "./data.js?v=20260703-3";
+import { categories as bundledCategories, flowCatalog as bundledFlowCatalog } from "./data.js?v=20260708-1";
 
 let flow;
 let dirty = false;
 let autosaveTimer;
 let loadedFlowId;
+let categories = bundledCategories;
+let flowCatalog = bundledFlowCatalog;
+let serverBacked = false;
 const $ = selector => document.querySelector(selector);
 const escapeHtml = (value = "") => String(value).replace(/[&<>'"]/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const nodeTypes = { start: "Start", action: "Actie", decision: "Vraag", note: "Opmerking", end: "Uitkomst" };
 const customCategoryKey = "lohc-custom-categories";
 const validTechnicalId = value => /^[a-z0-9-]+$/.test(value);
+const adminTokenKey = "lohc-admin-token";
+
+async function apiRequest(url, options = {}) {
+  const headers = new Headers(options.headers || {});
+  const token = localStorage.getItem(adminTokenKey);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  let response = await fetch(url, { ...options, headers });
+  if (response.status === 401) {
+    const entered = prompt("Beheerderscode nodig om deze wijziging op te slaan:")?.trim();
+    if (!entered) return response;
+    localStorage.setItem(adminTokenKey, entered);
+    headers.set("Authorization", `Bearer ${entered}`);
+    response = await fetch(url, { ...options, headers });
+  }
+  if (response.status === 403) {
+    localStorage.removeItem(adminTokenKey);
+    showToast("Beheerderscode klopt niet");
+  }
+  return response;
+}
 
 function customCategories() {
+  if (serverBacked) return [];
   try { return JSON.parse(localStorage.getItem(customCategoryKey)) || []; } catch { return []; }
 }
 function editorCategories() {
@@ -31,8 +55,10 @@ function emptyFlow() {
 }
 
 async function initialize() {
+  await loadCatalog();
+  updateServerModeCopy();
   const flowId = new URLSearchParams(location.search).get("flow");
-  const saved = flowId && localStorage.getItem(`lohc-flow-draft:${flowId}`);
+  const saved = !serverBacked && flowId && localStorage.getItem(`lohc-flow-draft:${flowId}`);
   if (saved) flow = JSON.parse(saved);
   else if (flowId) {
     const item = flowCatalog.find(entry => entry.id === flowId);
@@ -42,7 +68,29 @@ async function initialize() {
   render();
 }
 
+function updateServerModeCopy() {
+  if (!serverBacked) return;
+  $("#save-draft").textContent = "Bewaar op server";
+  document.querySelector(".editor-intro p:last-child").innerHTML = "Bouw stappen en vertakkingen zonder code. Wijzigingen worden op de server opgeslagen en zijn daarna voor iedereen beschikbaar.";
+}
+
+async function loadCatalog() {
+  try {
+    const response = await fetch("/api/catalog", { cache: "no-store" });
+    if (!response.ok) throw new Error("No server catalog");
+    const data = await response.json();
+    categories = data.categories || bundledCategories;
+    flowCatalog = data.flowCatalog || bundledFlowCatalog;
+    serverBacked = Boolean(data.serverBacked);
+  } catch {
+    categories = bundledCategories;
+    flowCatalog = bundledFlowCatalog;
+    serverBacked = false;
+  }
+}
+
 function localDraftList() {
+  if (serverBacked) return [];
   const drafts = [];
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index);
@@ -73,8 +121,8 @@ function renderFlowSelector() {
 }
 
 async function openFlow(flowId) {
-  if (dirty) saveLocalDraft(true);
-  const saved = localStorage.getItem(`lohc-flow-draft:${flowId}`);
+  if (dirty) await saveCurrent(true);
+  const saved = !serverBacked && localStorage.getItem(`lohc-flow-draft:${flowId}`);
   if (saved) flow = JSON.parse(saved);
   else {
     const item = flowCatalog.find(entry => entry.id === flowId);
@@ -85,17 +133,53 @@ async function openFlow(flowId) {
   dirty = false;
   history.replaceState(null, "", `editor.html?flow=${encodeURIComponent(flow.id)}`);
   render();
-  $("#save-state").textContent = saved ? "Concept lokaal bewaard" : "Gepubliceerde versie";
+  $("#save-state").textContent = serverBacked ? "Serverversie geladen" : (saved ? "Concept lokaal bewaard" : "Gepubliceerde versie");
 }
 
 function setDirty(value = true) {
   dirty = value;
-  $("#save-state").textContent = dirty ? "Wijzigingen opslaan…" : "Concept lokaal bewaard";
+  $("#save-state").textContent = dirty ? "Wijzigingen opslaan…" : (serverBacked ? "Op server opgeslagen" : "Concept lokaal bewaard");
   $("#save-state").classList.toggle("is-saved", !dirty);
   if (dirty) {
     clearTimeout(autosaveTimer);
-    autosaveTimer = setTimeout(() => saveLocalDraft(true), 350);
+    autosaveTimer = setTimeout(() => saveCurrent(true), serverBacked ? 900 : 350);
   }
+}
+
+async function saveCurrent(silent = false) {
+  if (serverBacked) return saveServerFlow(silent);
+  return saveLocalDraft(silent);
+}
+
+async function saveServerFlow(silent = false) {
+  const errors = validate();
+  if (!validTechnicalId(flow.id) || errors.length) {
+    $("#save-state").textContent = "Nog niet opgeslagen: los eerst de validatiemelding op";
+    $("#save-state").classList.remove("is-saved");
+    if (!silent) showToast("Los eerst de validatiemelding op");
+    return false;
+  }
+  const response = await apiRequest(`/api/flows/${encodeURIComponent(loadedFlowId || flow.id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(flow)
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    $("#save-state").textContent = "Opslaan op server mislukt";
+    $("#save-state").classList.remove("is-saved");
+    if (!silent) showToast(data.error || "Opslaan op server mislukt");
+    return false;
+  }
+  await loadCatalog();
+  loadedFlowId = flow.id;
+  dirty = false;
+  $("#save-state").textContent = "Op server opgeslagen";
+  $("#save-state").classList.add("is-saved");
+  history.replaceState(null, "", `editor.html?flow=${encodeURIComponent(flow.id)}`);
+  renderFlowSelector();
+  if (!silent) showToast("Flow op server opgeslagen");
+  return true;
 }
 
 function saveLocalDraft(silent = false) {
@@ -158,10 +242,13 @@ function renderContacts() {
 
 function renderDangerZone() {
   const published = flowCatalog.some(item => item.id === flow.id);
-  const hasLocalDraft = Boolean(localStorage.getItem(`lohc-flow-draft:${flow.id}`));
+  const hasLocalDraft = !serverBacked && Boolean(localStorage.getItem(`lohc-flow-draft:${flow.id}`));
   let copy = "Deze flow bestaat alleen in deze browser. Verwijderen kan niet ongedaan worden gemaakt.";
   let button = `<button class="button button--danger" id="delete-flow" type="button">Verwijder flow</button>`;
-  if (published && hasLocalDraft) {
+  if (serverBacked) {
+    copy = "Deze flow staat op de server. Verwijderen is direct zichtbaar voor iedereen.";
+    button = `<button class="button button--danger" id="delete-flow" type="button">Verwijder flow van server</button>`;
+  } else if (published && hasLocalDraft) {
     copy = "Verwijder alleen het lokale concept en herstel de gepubliceerde versie uit GitHub.";
     button = `<button class="button button--danger" id="delete-flow" type="button">Verwijder lokaal concept</button>`;
   } else if (published) {
@@ -280,7 +367,7 @@ function bindEvents() {
   $("#delete-flow")?.addEventListener("click", deleteCurrentFlow);
 }
 
-function addCategory() {
+async function addCategory() {
   const nlTitle = prompt("Naam van de nieuwe categorie (Nederlands):")?.trim();
   if (!nlTitle) return;
   const enTitle = prompt("Naam van de categorie in het Engels (optioneel):", nlTitle)?.trim() || nlTitle;
@@ -295,7 +382,17 @@ function addCategory() {
     nl: { title: nlTitle, description: "Eigen categorie." },
     en: { title: enTitle, description: "Custom category." }
   };
-  localStorage.setItem(customCategoryKey, JSON.stringify([...customCategories(), category]));
+  if (serverBacked) {
+    const response = await apiRequest("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(category)
+    });
+    if (!response.ok) return showToast("Categorie opslaan op server mislukt");
+    await loadCatalog();
+  } else {
+    localStorage.setItem(customCategoryKey, JSON.stringify([...customCategories(), category]));
+  }
   flow.category = id;
   setDirty();
   render();
@@ -304,10 +401,23 @@ function addCategory() {
 
 async function deleteCurrentFlow() {
   const published = flowCatalog.some(item => item.id === flow.id);
-  const confirmation = prompt(`Je staat op het punt “${flow.nl.title}” ${published ? "als lokaal concept " : ""}te verwijderen. Typ delete om te bevestigen.`);
+  const scope = serverBacked ? "van de server " : (published ? "als lokaal concept " : "");
+  const confirmation = prompt(`Je staat op het punt “${flow.nl.title}” ${scope}te verwijderen. Typ delete om te bevestigen.`);
   if (confirmation?.trim().toLowerCase() !== "delete") return showToast("Verwijderen geannuleerd");
   clearTimeout(autosaveTimer);
   const deletedId = flow.id;
+  if (serverBacked) {
+    const response = await apiRequest(`/api/flows/${encodeURIComponent(deletedId)}`, { method: "DELETE" });
+    if (!response.ok) return showToast("Verwijderen op server mislukt");
+    await loadCatalog();
+    dirty = false;
+    loadedFlowId = null;
+    const next = editorFlowList()[0];
+    if (next) await openFlow(next.id);
+    else { flow = emptyFlow(); loadedFlowId = flow.id; history.replaceState(null, "", "editor.html"); render(); }
+    showToast("Flow van server verwijderd");
+    return;
+  }
   localStorage.removeItem(`lohc-flow-draft:${deletedId}`);
   sessionStorage.removeItem(`lohc-flow-answers:${deletedId}`);
   dirty = false;
@@ -352,7 +462,7 @@ function deleteNode(id) {
 }
 
 function showToast(message) { const toast = $("#toast"); toast.textContent = message; toast.classList.add("is-visible"); setTimeout(() => toast.classList.remove("is-visible"), 1800); }
-$("#save-draft").addEventListener("click", () => saveLocalDraft(false));
+$("#save-draft").addEventListener("click", () => saveCurrent(false));
 $("#download-flow").addEventListener("click", () => {
   if (!validTechnicalId(flow.id)) {
     document.querySelector('[data-root="id"]')?.focus();
@@ -368,7 +478,7 @@ $("#download-flow").addEventListener("click", () => {
   URL.revokeObjectURL(url);
   showToast("JSON gedownload");
 });
-$("#new-flow").addEventListener("click", () => { if (dirty) saveLocalDraft(true); flow = emptyFlow(); loadedFlowId = null; history.replaceState(null, "", "editor.html"); setDirty(); render(); });
+$("#new-flow").addEventListener("click", async () => { if (dirty) await saveCurrent(true); flow = emptyFlow(); loadedFlowId = null; history.replaceState(null, "", "editor.html"); setDirty(); render(); });
 $("#import-flow").addEventListener("change", async event => { try { flow = JSON.parse(await event.target.files[0].text()); setDirty(); render(); showToast("Flow geïmporteerd"); } catch { showToast("Dit is geen geldige JSON-flow"); } event.target.value = ""; });
 window.addEventListener("beforeunload", event => { if (!dirty) return; event.preventDefault(); event.returnValue = ""; });
 
