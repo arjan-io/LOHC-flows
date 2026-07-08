@@ -1,0 +1,13 @@
+{
+  "name": "lohc-flows",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check app.js && node --check editor.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
