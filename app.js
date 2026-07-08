@@ -1,4 +1,4 @@
-import { categories as bundledCategories, flowCatalog as bundledFlowCatalog } from "./data.js?v=20260708-1";
+import { categories as bundledCategories, flowCatalog as bundledFlowCatalog } from "./data.js?v=20260708-2";
 
 const translations = {
   nl: {
@@ -15,7 +15,7 @@ const translations = {
     emailCopied: "E-mailadres gekopieerd", loading: "Proces laden…", invalidFlow: "Deze flow kon niet worden geladen.",
     continuesAt: "Vervolg bij", guided: "Begeleid", overview: "Overzicht", chooseAnswer: "Kies een antwoord om verder te gaan",
     yourRoute: "Jouw route", previousQuestion: "Vorige vraag", startAgain: "Start opnieuw", localDraft: "Lokaal concept",
-    usePublished: "Gebruik gepubliceerde versie"
+    usePublished: "Gebruik gepubliceerde versie", newFlow: "Nieuwe flow", newFlowCopy: "Maak een nieuw proces aan"
   },
   en: {
     brandSubtitle: "Process guide", help: "Need help?", footer: "LOHC Process Guide · Together we keep the club running",
@@ -31,7 +31,7 @@ const translations = {
     emailCopied: "Email address copied", loading: "Loading process…", invalidFlow: "This flow could not be loaded.",
     continuesAt: "Continues at", guided: "Guided", overview: "Overview", chooseAnswer: "Choose an answer to continue",
     yourRoute: "Your route", previousQuestion: "Previous question", startAgain: "Start again", localDraft: "Local draft",
-    usePublished: "Use published version"
+    usePublished: "Use published version", newFlow: "New flow", newFlowCopy: "Create a new process"
   }
 };
 
@@ -132,6 +132,14 @@ function flowCard(flow) {
     <span class="category-meta">${escapeHtml(category[language].title)} →</span></button>`;
 }
 
+function newFlowCard(categoryId = "") {
+  const href = `editor.html?new=1${categoryId ? `&category=${encodeURIComponent(categoryId)}` : ""}`;
+  return `<a class="category-card category-card--new" href="${href}">
+    <span class="category-icon category-icon--plus" aria-hidden="true">+</span><h3>${t("newFlow")}</h3>
+    <p>${t("newFlowCopy")}</p><span class="category-meta">${categoryId ? "→" : `${t("category")} + →`}</span>
+  </a>`;
+}
+
 function bindCards() {
   document.querySelectorAll("[data-flow]").forEach(button => button.addEventListener("click", () => {
     sessionStorage.removeItem(answerStorageKey(button.dataset.flow));
@@ -149,7 +157,7 @@ function renderHome(searchTerm = "") {
     <p class="hero-copy">${t("heroCopy")}</p><label class="search-wrap"><span class="search-icon" aria-hidden="true">⌕</span>
     <input class="search-input" id="flow-search" type="search" value="${escapeHtml(searchTerm)}" placeholder="${t("searchPlaceholder")}" aria-label="${t("searchPlaceholder")}" autocomplete="off"></label></div></section>
     <section class="content-shell"><div class="section-heading"><div><h2>${term ? t("results")(matches.length) : t("categories")}</h2><p>${term ? t("searchPlaceholder") : t("categoriesCopy")}</p></div></div>
-    <div class="category-grid">${term ? (matches.map(flowCard).join("") || `<div class="empty-state">${t("noResults")}</div>`) : allCategories().filter(category => flowCount(category.id) > 0).map(categoryCard).join("")}</div></section>`;
+    <div class="category-grid">${term ? (matches.map(flowCard).join("") || `<div class="empty-state">${t("noResults")}</div>`) : `${allCategories().filter(category => flowCount(category.id) > 0).map(categoryCard).join("")}${newFlowCard()}`}</div></section>`;
   const input = document.querySelector("#flow-search");
   input.addEventListener("input", event => renderHome(event.target.value));
   if (term) { input.focus({ preventScroll: true }); input.setSelectionRange(input.value.length, input.value.length); }
@@ -161,7 +169,7 @@ function renderCategory(categoryId) {
   const flows = availableFlows().filter(flow => flow.category === categoryId);
   main.innerHTML = `<section class="content-shell"><nav class="breadcrumbs"><a href="#/" data-home-link>${t("home")}</a><span>›</span><span>${escapeHtml(category[language].title)}</span></nav>
     <div class="section-heading"><div><h2>${escapeHtml(category[language].title)}</h2><p>${escapeHtml(category[language].description)}</p></div><span class="result-count">${t("processes")(flows.length)}</span></div>
-    <div class="category-grid">${flows.length ? flows.map(flowCard).join("") : `<div class="empty-state">${t("noProcesses")}</div>`}</div></section>`;
+    <div class="category-grid">${flows.map(flowCard).join("")}${newFlowCard(categoryId)}</div></section>`;
   bindCards();
 }
 
