@@ -1,0 +1,35 @@
+services:
+  lohc-flows:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATA_DIR: /data
+      LOHC_ADMIN_TOKEN: ${LOHC_ADMIN_TOKEN:-}
+    volumes:
+      - lohc-flows-data:/data
+    ports:
+      - "8080:8080"
+
+  pay-statistics:
+    build:
+      context: ../Pay and statistics calculator
+      dockerfile: ../LOHC flows/docker/pay-statistics.Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_PATH: /app/data/roster-calculator.sqlite
+    volumes:
+      - pay-statistics-data:/app/data
+      - pay-statistics-uploads:/app/uploads
+    ports:
+      - "8081:3000"
+
+volumes:
+  lohc-flows-data:
+  pay-statistics-data:
+  pay-statistics-uploads:
